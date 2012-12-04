@@ -1,20 +1,23 @@
 Game = Backbone.Model.extend({
 	urlRoot: '/games',
-	
-	initialize: function() {
-	    this.state = this.state || "[[0,0,0],[0,0,0],[0,0,0]]";
-	    this.moves = this.moves || "[]";
 
-	    this.stateJson = JSON.parse(this.state);
-	    this.movesJson = JSON.parse(this.moves);
+	defaults: {
+	    "state": "[[0,0,0],[0,0,0],[0,0,0]]",
+	    "moves": "[]",
 	},
 
 	move: function(row, col) {
-	    this.stateJson[row][col] = Game.States.Human;
-	    this.set("state", JSON.stringify(this.stateJson));
+	    stateJson = JSON.parse(this.get('state'));
+	    stateJson[row][col] = Game.States.Human;
+	    this.set("state", JSON.stringify(stateJson));
 
-	    this.save();
-	    // TODO: reload w/ computer move
+	    var that = this;
+	    this.save(
+                {}, {
+   	        success: function(model, response) {
+		    that.fetch();
+		}
+	    });
 	},
 });
 
