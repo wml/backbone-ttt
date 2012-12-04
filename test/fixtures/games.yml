@@ -1,11 +1,11 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  state: MyString
-  state: 1
+  state: "[[0,0,0],[0,0,0],[0,0,0]]"
+  status: 1
   moves: MyString
 
 two:
-  state: MyString
-  state: 1
+  state: "[[0,0,0],[1,1,2],[2,2,1]]"
+  status: 1
   moves: MyString

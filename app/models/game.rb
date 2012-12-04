@@ -12,8 +12,8 @@ class Game < ActiveRecord::Base
     return @@States
   end
 
-  def initialize params
-    super params
+  def initialize *params
+    super *params
     self.status = 0 unless self.status
     self.state = '[[0,0,0],[0,0,0],[0,0,0]]' unless self.state
     self.moves = '[]' unless self.moves
