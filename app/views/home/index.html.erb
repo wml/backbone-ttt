@@ -1,3 +1,52 @@
+    <% cell_size = 125 %>
+    <% grid_size = 3 * cell_size %>
+
+    <script type="text/javascript">      
+      var UI = {
+        cellSize: <%= cell_size %>,
+
+        getContext: function() {
+          return $('canvas')[0].getContext("2d");
+        },
+
+        draw: function(state) {
+          var ctx = this.getContext();
+          var s = UI.cellSize;
+
+          for (var row = 0; row < 3; ++row) {
+            for (var col = 0; col < 3; ++col) {
+		ctx.beginPath();
+		ctx.rect(s * row, s * col, s, s);
+	        ctx.fillStyle = "#e8e8e8";
+		ctx.fill();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = "#666666";
+		ctx.stroke();				    
+            }
+	  }
+        },
+
+        hitTest: function(e) { 
+	  return {
+            row: Math.floor(e.offsetY / UI.cellSize),
+            col: Math.floor(e.offsetX / UI.cellSize),
+          };
+	}
+      };
+
+      $(document).ready(function(){
+        var game = new Game;
+        
+        UI.draw(game.stateJson);
+
+	$("canvas").click(function(e) {
+          var rowcol = UI.hitTest(e);
+          game.move(rowcol.row, rowcol.col);
+          UI.draw(game.stateJson);
+        });
+      });
+    </script>
+
     <style>
       body {
         margin: 0;
@@ -9,7 +58,9 @@
       }
 
       canvas {
-        width: 800px;
+        margin: 75px auto;
+        display: block;
+        cursor: pointer;
       }
 
       #header {
@@ -33,6 +84,5 @@
     </div>
 
     <div>
-      <canvas>
-      </canvas>
+      <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
     </div>
