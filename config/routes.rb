@@ -1,5 +1,5 @@
 BackboneTtt::Application.routes.draw do
-  root :to => "games#index"
+  root :to => "home#index"
 
   resources :games
 
