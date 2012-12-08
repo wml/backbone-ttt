@@ -15,8 +15,17 @@ class MinimaxTest < Test::Unit::TestCase
     assert_equal('[[1,1,2],[2,1,2],[1,0,2]]', @underTest.move(oneWinningMove))
   end
 
-  def test_forced_block_taken
-    oneWinningMove = '[[1,2,0],[1,0,0],[0,0,0]]'
-    assert_equal('[[1,2,0],[1,0,0],[2,0,0]]', @underTest.move(oneWinningMove))
+  def test_stalemate_chosen_over_loss
+    stalemateOrLoss = '[[1,2,1],[2,2,1],[0,1,0]]'
+    assert_equal('[[1,2,1],[2,2,1],[0,1,2]]', @underTest.move(stalemateOrLoss))
   end
+
+  # TODO: prefer moves that will make opponent take longer to win if unwinable
+  # TODO: prefer moves that have less loss conditions if loss distance equal
+
+  #def test_forced_block_taken
+  #  forcedBlock = '[[1,2,0],[1,0,0],[0,0,0]]'
+  #  assert_equal('[[1,2,0],[1,0,0],[2,0,0]]', @underTest.move(forcedBlock))
+  #end
+
 end
