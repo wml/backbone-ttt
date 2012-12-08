@@ -42,6 +42,9 @@ class GamesController < ApplicationController
   # POST /games
   # POST /games.json
   def create
+    gameMap = params[:game]
+    gameMap[:state] = AI::FirstAvailable.move(gameMap[:state])
+
     @game = Game.new(params[:game])
 
     respond_to do |format|

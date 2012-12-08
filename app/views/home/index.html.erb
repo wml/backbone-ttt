@@ -9,21 +9,39 @@
           return $('canvas')[0].getContext("2d");
         },
 
+        eachRow: function(callback) {
+          for (var row = 0; row < 3; ++row) {
+            for (var col = 0; col < 3; ++col) {
+		callback(row, col);			    
+            }
+	  }
+        },
+
         draw: function(state) {
           var ctx = this.getContext();
           var s = UI.cellSize;
+          var x = $('#x-img')[0];
+          var o = $('#o-img')[0];
 
-          for (var row = 0; row < 3; ++row) {
-            for (var col = 0; col < 3; ++col) {
-		ctx.beginPath();
-		ctx.rect(s * row, s * col, s, s);
-	        ctx.fillStyle = "#e8e8e8";
-		ctx.fill();
-		ctx.lineWidth = 1;
-		ctx.strokeStyle = "#666666";
-		ctx.stroke();				    
-            }
-	  }
+          UI.eachRow(function(row, col) {
+            var left = s * col;
+            var top = s * row;
+
+            ctx.beginPath();
+	    ctx.rect(left, top, s, s);
+	    ctx.fillStyle = "#e8e8e8";
+	    ctx.fill();
+	    ctx.lineWidth = 1;
+	    ctx.strokeStyle = "#666666";
+	    ctx.stroke();
+
+	    if (Game.States.Human == state[row][col]) {
+	      ctx.drawImage(x, left, top);
+	    }
+	    else if (Game.States.Opponent == state[row][col]) {
+	      ctx.drawImage(o, left, top);
+	    }
+          });
         },
 
         hitTest: function(e) { 
@@ -36,13 +54,18 @@
 
       $(document).ready(function(){
         var game = new Game;
+        var canvas = $("canvas");
+        var draw = function() {
+          UI.draw(JSON.parse(game.get("state")));
+          canvas[0].style.cursor = "pointer";
+        };
         
-        UI.draw(game.stateJson);
+        draw();
 
-	$("canvas").click(function(e) {
+	canvas.click(function(e) {
+          this.style.cursor = "wait";
           var rowcol = UI.hitTest(e);
-          game.move(rowcol.row, rowcol.col);
-          UI.draw(game.stateJson);
+          game.move(rowcol.row, rowcol.col, draw);
         });
       });
     </script>
@@ -75,6 +98,10 @@
         text-align: center;
         font-size: 25px;
       }
+
+      img {
+        display: none;
+      }
     </style>
 
     <div id="header">
@@ -86,3 +113,6 @@
     <div>
       <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
     </div>
+
+    <%= image_tag "x.png", :id => "x-img" %>
+    <%= image_tag "o.png", :id => "o-img" %>

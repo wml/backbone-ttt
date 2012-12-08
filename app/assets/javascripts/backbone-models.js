@@ -6,7 +6,7 @@ Game = Backbone.Model.extend({
 	    "moves": "[]",
 	},
 
-	move: function(row, col) {
+	move: function(row, col, callback) {
 	    stateJson = JSON.parse(this.get('state'));
 	    stateJson[row][col] = Game.States.Human;
 	    this.set("state", JSON.stringify(stateJson));
@@ -15,7 +15,9 @@ Game = Backbone.Model.extend({
 	    this.save(
                 {}, {
    	        success: function(model, response) {
-		    that.fetch();
+			that.fetch({
+				success: callback
+			});
 		}
 	    });
 	},
