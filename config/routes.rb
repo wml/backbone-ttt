@@ -3,6 +3,8 @@ BackboneTtt::Application.routes.draw do
 
   resources :games
 
+  match 'ai/:ai/move' => 'ai#move'
+
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

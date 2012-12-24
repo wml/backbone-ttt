@@ -1,5 +1,3 @@
-require File.join(File.dirname(__FILE__), '../ai')
-
 class GamesController < ApplicationController
   # GET /games
   # GET /games.json
@@ -42,9 +40,6 @@ class GamesController < ApplicationController
   # POST /games
   # POST /games.json
   def create
-    gameMap = params[:game]
-    gameMap[:state] = AI::FirstAvailable.move(gameMap[:state])
-
     @game = Game.new(params[:game])
 
     respond_to do |format|
@@ -62,11 +57,6 @@ class GamesController < ApplicationController
   # PUT /games/1.json
   def update
     @game = Game.find(params[:id])
-
-    # TODO: move after validation, only if game is not over, track moves (obj on game.rb to move into a row/col instead of direct set)
-
-    gameMap = params[:game]
-    gameMap[:state] = AI::FirstAvailable.move(gameMap[:state])
 
     respond_to do |format|
       if @game.update_attributes(params[:game])

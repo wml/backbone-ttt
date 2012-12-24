@@ -84,27 +84,7 @@ module AI
         Game.States[:Open] => 0,
       }
 
-      for row in 0..2
-        if board[row][0] == board[row][1] and board[row][1] == board[row][2]
-          return scores[board[row][0]]
-        end
-      end
-
-      for col in 0..2
-        if board[0][col] == board[1][col] and board[1][col] == board[2][col]
-          return scores[board[0][col]]
-        end
-      end
-
-      if board[0][0] == board[1][1] and board[1][1] == board[2][2]
-          return scores[board[0][0]]
-      end
-
-      if board[2][0] == board[1][1] and board[1][1] == board[0][2]
-          return scores[board[2][0]]
-      end
-        
-      return 0
+      return scores[Game.winner(board)]
     end
   end
 end

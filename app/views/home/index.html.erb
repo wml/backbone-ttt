@@ -12,12 +12,12 @@
         eachRow: function(callback) {
           for (var row = 0; row < 3; ++row) {
             for (var col = 0; col < 3; ++col) {
-		callback(row, col);			    
+              callback(row, col);			    
             }
-	  }
+          }
         },
 
-        draw: function(state) {
+        draw: function(state, winner) {
           var ctx = this.getContext();
           var s = UI.cellSize;
           var x = $('#x-img')[0];
@@ -28,42 +28,76 @@
             var top = s * row;
 
             ctx.beginPath();
-	    ctx.rect(left, top, s, s);
-	    ctx.fillStyle = "#e8e8e8";
-	    ctx.fill();
-	    ctx.lineWidth = 1;
-	    ctx.strokeStyle = "#666666";
-	    ctx.stroke();
+            ctx.rect(left, top, s, s);
+            ctx.fillStyle = "#e8e8e8";
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#666666";
+            ctx.stroke();
 
-	    if (Game.States.Human == state[row][col]) {
-	      ctx.drawImage(x, left, top);
-	    }
-	    else if (Game.States.Opponent == state[row][col]) {
-	      ctx.drawImage(o, left, top);
-	    }
+            if (Game.States.Human == state[row][col]) {
+              ctx.drawImage(x, left, top);
+            }
+            else if (Game.States.Opponent == state[row][col]) {
+              ctx.drawImage(o, left, top);
+            }
           });
+
+          if (undefined != winner && null != winner) {
+            UI.drawWinner(ctx, winner);
+          }
+        },
+
+        drawWinner: function(ctx, winner) {
+          var s = UI.cellSize;
+          var color = (Game.States.Human == winner[0] ? '#0F0' : '#F00');
+
+          ctx.beginPath();
+          ctx.lineWidth = 10;
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = color;
+
+          if ('row' == winner[1]) {
+            ctx.moveTo(s/4, s/2 + s * winner[2]);
+            ctx.lineTo(s * 3 - s / 4, s/2 + s * winner[2]);
+          }
+          else if ('col' == winner[1]) {
+            ctx.moveTo(s/2 + s * winner[2], s/4);
+            ctx.lineTo(s/2 + s * winner[2], s * 3 - s / 4);
+          }
+          else if ('ulbr' == winner[1]) {
+            ctx.moveTo(s/4, s/4);
+            ctx.lineTo(s * 3 - s / 4, s * 3 - s / 4);
+          }
+          else {
+            ctx.moveTo(s/4, s * 3 - s / 4);
+            ctx.lineTo(s * 3 - s / 4, s/4);
+          }
+
+          ctx.stroke();
         },
 
         hitTest: function(e) { 
-	  return {
+          return {
             row: Math.floor(e.offsetY / UI.cellSize),
             col: Math.floor(e.offsetX / UI.cellSize),
           };
-	}
+        }
       };
 
       $(document).ready(function(){
         var game = new Game;
         var canvas = $("canvas");
-        var draw = function() {
-          UI.draw(JSON.parse(game.get("state")));
+        var draw = function(winner) {
+          UI.draw(JSON.parse(game.get("state")), winner);
           canvas[0].style.cursor = "pointer";
         };
         
         draw();
 
-	canvas.click(function(e) {
+        canvas.click(function(e) {
           this.style.cursor = "wait";
+          $("#instructions").css("display", "none");
           var rowcol = UI.hitTest(e);
           game.move(rowcol.row, rowcol.col, draw);
         });
@@ -81,7 +115,7 @@
       }
 
       canvas {
-        margin: 75px auto;
+        margin: 75px auto 40px;
         display: block;
         cursor: pointer;
       }
@@ -99,6 +133,10 @@
         font-size: 25px;
       }
 
+      h2 {
+        text-align: center;
+      }
+
       img {
         display: none;
       }
@@ -106,12 +144,14 @@
 
     <div id="header">
       <div>
-	<h1>Backbone / Rails Tic-Tac-Toe Minimax Machine</h1>
+	    <h1>Backbone / Rails Tic-Tac-Toe Minimax Machine</h1>
       </div>
     </div>
 
     <div>
       <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
+      <h2 id="status">&nbsp;</h2>
+      <h2 id="instructions">Place an <em>X</em> by clicking the grid to start a new game</h2>
     </div>
 
     <%= image_tag "x.png", :id => "x-img" %>
