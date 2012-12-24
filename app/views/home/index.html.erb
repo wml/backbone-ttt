@@ -88,18 +88,29 @@
       $(document).ready(function(){
         var game = new Game;
         var canvas = $("canvas");
-        var draw = function(winner) {
+
+        var updateUI = function(winner) {
           UI.draw(JSON.parse(game.get("state")), winner);
-          canvas[0].style.cursor = "pointer";
+
+          if (undefined != winner && null != winner) {
+            $('#winner').text(
+              (Game.States.Human == winner[0]) ? "You Win :)" : "You Lose :("
+            );
+            canvas.unbind('click');
+            canvas.css("cursor", "default");
+          }
+          else {
+            canvas.css("cursor", "pointer");
+          }
         };
         
-        draw();
+        updateUI();
 
         canvas.click(function(e) {
           this.style.cursor = "wait";
           $("#instructions").css("display", "none");
           var rowcol = UI.hitTest(e);
-          game.move(rowcol.row, rowcol.col, draw);
+          game.move(rowcol.row, rowcol.col, updateUI);
         });
       });
     </script>
@@ -150,7 +161,7 @@
 
     <div>
       <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
-      <h2 id="status">&nbsp;</h2>
+      <h2 id="winner">&nbsp;</h2>
       <h2 id="instructions">Place an <em>X</em> by clicking the grid to start a new game</h2>
     </div>
 

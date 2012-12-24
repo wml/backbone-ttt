@@ -16,11 +16,13 @@ Game = Backbone.Model.extend({
         state[row][col] = Game.States.Human;
         moves.push(state);
 
-        if (null == this.winner(state)) {
+        var winner = this.winner(state);
+        if (null == winner) {
             this.getAIMove(state, moves, callback);
         }
         else {
-            this.moveComplete(state, moves, callback);
+            this.set("status", winner[0]);
+            this.moveComplete(state, moves, winner, callback);
         }
     },
 
@@ -33,14 +35,17 @@ Game = Backbone.Model.extend({
             success: function(data, textStatus, jqXHR) {
                 state = data;
                 moves.push(state);
-                that.moveComplete(state, moves, callback);
+                that.moveComplete(state, moves, that.winner(state), callback);
             }
         });
     },
 
-    moveComplete: function(state, moves, callback) {
+    moveComplete: function(state, moves, winner, callback) {
         this.set("state", JSON.stringify(state));
         this.set("moves", JSON.stringify(moves));
+        if (undefined != winner && null != winner) {
+            this.set("status", winner[0]);
+        }
 
         var that = this;
         // TODO: error handling
@@ -48,7 +53,7 @@ Game = Backbone.Model.extend({
             {}, {
                success: function(model, response) {
                     that.fetch({
-                        success: function(){ callback(that.winner(state)) }
+                        success: function(){ callback(winner) }
                });
             }
         });
