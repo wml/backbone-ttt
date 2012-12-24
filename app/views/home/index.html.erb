@@ -1,14 +1,20 @@
     <% cell_size = 125 %>
     <% grid_size = 3 * cell_size %>
+    <% mini_cell_size = 75 %>
+    <% mini_grid_size = 3 * 75 %>
 
-    /* TODO: move history UI */
+    <!-- TODO
+      set overflow attr on history after enough added
+      bug: frontend does not handle "tie" condition, requesting another move after move 9 and causing a JS bug
+    -->
 
     <script type="text/javascript">      
       var UI = {
-        cellSize: <%= cell_size %>,
+        mainCellSize: <%= cell_size %>,
+        lastMoveDrawn: -1,
 
-        getContext: function() {
-          return $('canvas')[0].getContext("2d");
+        getMainContext: function() {
+          return $('#board')[0].getContext("2d");
         },
 
         eachRow: function(callback) {
@@ -20,14 +26,17 @@
         },
 
         draw: function(state, winner) {
-          var ctx = this.getContext();
-          var s = UI.cellSize;
-          var x = $('#x-img')[0];
-          var o = $('#o-img')[0];
+          this.drawState(this.getMainContext(), 0, 0, UI.mainCellSize, state, winner);
+        },
+
+        drawState: function(ctx, x, y, cellsize, state, winner) {
+          var s = cellsize;
+          var ximg = $('#x-img')[0];
+          var oimg = $('#o-img')[0];
 
           UI.eachRow(function(row, col) {
-            var left = s * col;
-            var top = s * row;
+            var left = x + s * col;
+            var top = y + s * row;
 
             ctx.beginPath();
             ctx.rect(left, top, s, s);
@@ -38,10 +47,10 @@
             ctx.stroke();
 
             if (Game.States.Human == state[row][col]) {
-              ctx.drawImage(x, left, top);
+              ctx.drawImage(ximg, left, top);
             }
             else if (Game.States.Opponent == state[row][col]) {
-              ctx.drawImage(o, left, top);
+              ctx.drawImage(oimg, left, top);
             }
           });
 
@@ -51,7 +60,7 @@
         },
 
         drawWinner: function(ctx, winner) {
-          var s = UI.cellSize;
+          var s = UI.mainCellSize;
           var color = (Game.States.Human == winner[0] ? '#0F0' : '#F00');
 
           ctx.beginPath();
@@ -81,15 +90,17 @@
 
         hitTest: function(e) { 
           return {
-            row: Math.floor(e.offsetY / UI.cellSize),
-            col: Math.floor(e.offsetX / UI.cellSize),
+            row: Math.floor(e.offsetY / UI.mainCellSize),
+            col: Math.floor(e.offsetX / UI.mainCellSize),
           };
         }
       };
 
       function reset() {
+        UI.lastMoveDrawn = -1;
+
         var game = new Game;
-        var canvas = $("canvas");
+        var canvas = $("#board");
 
         $("#winner").css("display", "none");
         $("#newgame").css("display", "none");
@@ -119,8 +130,9 @@
           this.style.cursor = "wait";
           $("#instructions").css("display", "none");
           var rowcol = UI.hitTest(e);
+          var ai = $('input[name=ai]:checked').val();
           
-          if (!game.move(rowcol.row, rowcol.col, updateUI)) {
+          if (!game.move(rowcol.row, rowcol.col, ai, updateUI)) {
             canvas.css("cursor", "pointer");
             alert("Bogus move, broski");
           }
@@ -143,10 +155,10 @@
         margin: 0 auto;
       }
 
-      canvas {
-        margin: 75px auto 60px;
-        display: block;
+      #board {
         cursor: pointer;
+        margin: 0px auto;
+        display: block;
       }
 
       #header {
@@ -166,6 +178,12 @@
         text-align: center;
       }
 
+      h3 {
+        margin-bottom10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ccc;
+      }
+
       img {
         display: none;
       }
@@ -174,6 +192,39 @@
         cursor: pointer;
         text-decoration: underline;
         color: #44F;
+      }
+
+      #game {
+        width: 500px;
+        overflow: hidden;
+        margin: 0;
+        float:left;
+        margin: 75px 0 40px;
+      }
+
+      #sidebar {
+        width: 250px;
+        height: <%= grid_size %>px;
+        float: right;
+        overflow: hidden;
+        display: inline;
+        margin-top: 75px;
+        border-left: 1px solid #ccc;
+        padding-left: 20px;
+      }
+
+      .clear {
+        clear: both;
+      }
+
+      .notop {
+        margin-top: 0px;
+      }
+
+      #history {
+        overflow-y: hidden;
+        width: 250px;
+        height: 250px;
       }
 
     </style>
@@ -185,7 +236,24 @@
     </div>
 
     <div>
-      <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
+      <div id="game">
+        <canvas id="board" width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
+      </div>
+      <div id="sidebar">
+        <h3 class="notop">AI</h3>
+
+        <input type="radio" value="Minimax" name="ai" checked="checked" />
+        <label for="Minimax">Minimax</label>
+
+        <input type="radio" value="FirstAvailable" name="ai"/>
+        <label for="FirstAvailable">First Open</label>
+
+        <h3>Move History</h3>
+        <div id="history"><canvas id="history_canvas" width="<%= mini_grid_size %>" height="<%= 9 * (mini_grid_size + 20) %>"></canvas></div>
+      </div>
+
+      <div class="clear"></div>
+
       <h2 id="winner"></h2>
       <h2 id="instructions">Place an <em>X</em> by clicking the grid to start</h2>
       <h2 id="newgame">Click here to start a new game</h2>

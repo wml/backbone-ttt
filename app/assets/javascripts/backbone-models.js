@@ -6,7 +6,7 @@ Game = Backbone.Model.extend({
         "moves": "[]",
     },
 
-    move: function(row, col, callback) {
+    move: function(row, col, ai, callback) {
         // TODO: still struggling in the backbone / rails model with where to
         // put this kind of logic
 
@@ -22,7 +22,7 @@ Game = Backbone.Model.extend({
 
         var winner = this.winner(state);
         if (null == winner) {
-            this.getAIMove(state, moves, callback);
+            this.getAIMove(state, moves, ai, callback);
         }
         else {
             this.set("status", winner[0]);
@@ -32,10 +32,10 @@ Game = Backbone.Model.extend({
         return true;
     },
 
-    getAIMove: function(state, moves, callback) {
+    getAIMove: function(state, moves, ai, callback) {
         // TODO: ability to select which AI
         var that = this;
-        $.ajax('/ai/FirstAvailable/move', {
+        $.ajax('/ai/' + ai + '/move', {
             data: { "state": JSON.stringify(state) },
             error: function(jqXHR, textStatus, errorThrown) { /* TODO */ },
             success: function(data, textStatus, jqXHR) {
