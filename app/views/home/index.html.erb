@@ -1,6 +1,8 @@
     <% cell_size = 125 %>
     <% grid_size = 3 * cell_size %>
 
+    /* TODO: move history UI */
+
     <script type="text/javascript">      
       var UI = {
         cellSize: <%= cell_size %>,
@@ -85,9 +87,13 @@
         }
       };
 
-      $(document).ready(function(){
+      function reset() {
         var game = new Game;
         var canvas = $("canvas");
+
+        $("#winner").css("display", "none");
+        $("#newgame").css("display", "none");
+        $("#instructions").css("display", "block");
 
         var updateUI = function(winner) {
           UI.draw(JSON.parse(game.get("state")), winner);
@@ -98,6 +104,9 @@
             );
             canvas.unbind('click');
             canvas.css("cursor", "default");
+
+            $("#newgame").css("display", "block");
+            $("#winner").css("display", "block");
           }
           else {
             canvas.css("cursor", "pointer");
@@ -107,11 +116,18 @@
         updateUI();
 
         canvas.click(function(e) {
+          // TODO: don't let human steal tiles or play same twice
+
           this.style.cursor = "wait";
           $("#instructions").css("display", "none");
           var rowcol = UI.hitTest(e);
           game.move(rowcol.row, rowcol.col, updateUI);
         });
+      }
+
+      $(document).ready(function() {
+        $('#newgame').click(reset);
+        reset();
       });
     </script>
 
@@ -126,7 +142,7 @@
       }
 
       canvas {
-        margin: 75px auto 40px;
+        margin: 75px auto 60px;
         display: block;
         cursor: pointer;
       }
@@ -151,6 +167,13 @@
       img {
         display: none;
       }
+
+      #newgame { 
+        cursor: pointer;
+        text-decoration: underline;
+        color: #44F;
+      }
+
     </style>
 
     <div id="header">
@@ -161,8 +184,9 @@
 
     <div>
       <canvas width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
-      <h2 id="winner">&nbsp;</h2>
-      <h2 id="instructions">Place an <em>X</em> by clicking the grid to start a new game</h2>
+      <h2 id="winner"></h2>
+      <h2 id="instructions">Place an <em>X</em> by clicking the grid to start</h2>
+      <h2 id="newgame">Click here to start a new game</h2>
     </div>
 
     <%= image_tag "x.png", :id => "x-img" %>

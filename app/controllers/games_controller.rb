@@ -1,4 +1,6 @@
 class GamesController < ApplicationController
+  # TODO: rails validation
+
   # GET /games
   # GET /games.json
   def index
