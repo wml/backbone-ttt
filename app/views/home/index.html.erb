@@ -116,12 +116,14 @@
         updateUI();
 
         canvas.click(function(e) {
-          // TODO: don't let human steal tiles or play same twice
-
           this.style.cursor = "wait";
           $("#instructions").css("display", "none");
           var rowcol = UI.hitTest(e);
-          game.move(rowcol.row, rowcol.col, updateUI);
+          
+          if (!game.move(rowcol.row, rowcol.col, updateUI)) {
+            canvas.css("cursor", "pointer");
+            alert("Bogus move, broski");
+          }
         });
       }
 

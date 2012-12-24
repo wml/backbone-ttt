@@ -13,6 +13,10 @@ Game = Backbone.Model.extend({
         var state = JSON.parse(this.get('state'));
         var moves = JSON.parse(this.get('moves'));
 
+        if (state[row][col] != Game.States.Open) {
+            return false;
+        }
+
         state[row][col] = Game.States.Human;
         moves.push(state);
 
@@ -24,6 +28,8 @@ Game = Backbone.Model.extend({
             this.set("status", winner[0]);
             this.moveComplete(state, moves, winner, callback);
         }
+
+        return true;
     },
 
     getAIMove: function(state, moves, callback) {
