@@ -21,10 +21,16 @@ module AI
   class Minimax
     def self.move state
       state = JSON.parse(state)
-      return JSON.dump(self.algo(true, state, true))
+      solutions = { }
+      return JSON.dump(self.algo(true, state, true, solutions))
     end
 
-    def self.algo myturn, board, root
+    def self.algo myturn, board, root, solutions
+      boardkey = board.to_s
+      if solutions.include? boardkey
+        return solutions[boardkey]
+      end
+
       score = self.score(board)
       children = self.children(myturn, board)
 
@@ -36,7 +42,7 @@ module AI
       bestmove = nil
 
       children.each do |child|
-        score = self.algo((not myturn), child, false)
+        score = self.algo((not myturn), child, false, solutions)
 
         if nil == bestscore or \
           ((myturn and score > bestscore) or (not myturn and score < bestscore))
@@ -48,6 +54,7 @@ module AI
       if root
         return bestmove
       else
+        solutions[boardkey] = bestscore
         return bestscore
       end
     end

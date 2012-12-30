@@ -10,4 +10,4 @@ end
 
 # TODO: move to mongo database
 # TODO: move to heroku
-# memoization for minimax to decrease move time
+
