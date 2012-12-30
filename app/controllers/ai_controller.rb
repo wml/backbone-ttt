@@ -10,4 +10,4 @@ end
 
 # TODO: move to mongo database
 # TODO: move to heroku
-
+# TODO: precomputed AI
