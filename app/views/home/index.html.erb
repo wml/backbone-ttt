@@ -26,7 +26,9 @@
         },
 
         draw: function(state, winner) {
-          this.drawState(this.getMainContext(), 0, 0, Graphics.mainCellSize, state, winner);
+          this.drawState(
+            this.getMainContext(), 0, 0, Graphics.mainCellSize, state, winner
+          );
         },
 
         drawState: function(ctx, x, y, cellsize, state, winner) {
@@ -55,8 +57,8 @@
             }
           });
 
-          if (undefined != winner && null != winner) {
-            if (Game.States.Tie != winner[0]) {
+          if (null != winner) {
+            if (Game.States.Tie != winner.who) {
               Graphics.drawWinner(ctx, winner);
             }
 
@@ -70,22 +72,22 @@
 
         drawWinner: function(ctx, winner) {
           var s = Graphics.mainCellSize;
-          var color = (Game.States.Human == winner[0] ? '#0F0' : '#F00');
+          var color = (Game.States.Human == winner.who ? '#0F0' : '#F00');
 
           ctx.beginPath();
           ctx.lineWidth = 10;
           ctx.lineCap = 'round';
           ctx.strokeStyle = color;
 
-          if ('row' == winner[1]) {
-            ctx.moveTo(s/4, s/2 + s * winner[2]);
-            ctx.lineTo(s * 3 - s / 4, s/2 + s * winner[2]);
+          if ('row' == winner.how) {
+            ctx.moveTo(s/4, s/2 + s * winner.where);
+            ctx.lineTo(s * 3 - s / 4, s/2 + s * winner.where);
           }
-          else if ('col' == winner[1]) {
-            ctx.moveTo(s/2 + s * winner[2], s/4);
-            ctx.lineTo(s/2 + s * winner[2], s * 3 - s / 4);
+          else if ('col' == winner.how) {
+            ctx.moveTo(s/2 + s * winner.where, s/4);
+            ctx.lineTo(s/2 + s * winner.where, s * 3 - s / 4);
           }
-          else if ('ulbr' == winner[1]) {
+          else if ('ulbr' == winner.how) {
             ctx.moveTo(s/4, s/4);
             ctx.lineTo(s * 3 - s / 4, s * 3 - s / 4);
           }
@@ -176,7 +178,7 @@
           message[Game.States.Opponent] = "You Lose :(",
           message[Game.States.Tie] = "Tie :|",
 
-          $('#winner').text(message[winner[0]]);
+          $('#winner').text(message[winner.who]);
           UI.lock(UI.getBoard(), "default");
 
           $("#newgame").css("display", "block");
