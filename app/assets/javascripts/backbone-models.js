@@ -55,12 +55,10 @@ Game = Backbone.Model.extend({
             {}, {
                 error: function(model, error) { errorCallback(error.responseText); },
                 success: function(model, response) {
-                    that.fetch({
-                        error: function(model, error) { errorCallback(error.responseText); },
-                        success: function() { callback(winner); }
-                });
+                        callback(winner);
+                },
             }
-        });
+        );
     },
 
     winner: function(state) {
