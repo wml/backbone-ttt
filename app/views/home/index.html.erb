@@ -3,12 +3,6 @@
     <% mini_cell_size = 50 %>
     <% mini_grid_size = 3 * mini_cell_size %>
 
-    <!-- TODO
-      set overflow attr on history after enough added
-      status in DB: 3 should be draw
-      memoization for minimax to decrease move time
-    -->
-
     <script type="text/javascript">      
       var Graphics = {
         mainCellSize: <%= cell_size %>,
@@ -173,6 +167,7 @@
           $("#winner").css("display", "none");
           $("#newgame").css("display", "none");
           $("#instructions").css("display", "block");
+          $('#movetime').text("");
 
           Graphics.clearHistory();
           Graphics.draw(UI.game.getState(), null);
@@ -214,15 +209,18 @@
           Graphics.draw(game.getState(), winner);
 
           if (null == winner) {
-            game.getAIMove(ai, UI.aiMoveSaved);
+            var start = (new Date()).getTime();
+            game.getAIMove(ai, function(winner) { UI.aiMoveSaved(winner, start); });
           }
           else {
             UI.gameOver(winner);
           }
         },
 
-        aiMoveSaved: function(winner) {
+        aiMoveSaved: function(winner, start) {
           Graphics.draw(UI.game.getState(), winner);
+          var responseTime = (new Date()).getTime() - start;
+          $('#movetime').text("response time: " + responseTime + "ms");
 
           if (null == winner) {
             UI.unlock(UI.getBoard());
@@ -339,6 +337,12 @@
         display: block;
       }
 
+      #movetime {
+        float: right;
+        font-size: 10px;
+        font-weight: normal;
+      }
+
     </style>
 
     <div id="header">
@@ -352,7 +356,7 @@
         <canvas id="board" width="<%= grid_size %>" height="<%= grid_size %>"></canvas>
       </div>
       <div id="sidebar">
-        <h3 class="notop">AI</h3>
+        <h3 class="notop">AI <span id="movetime"></span></h3>
 
         <input type="radio" value="Minimax" name="ai" checked="checked" />
         <label for="Minimax">Minimax</label>
