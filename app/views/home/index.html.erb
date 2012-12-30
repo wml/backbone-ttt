@@ -33,6 +33,7 @@
           var s = cellsize;
           var ximg = $('#x-img')[0];
           var oimg = $('#o-img')[0];
+          ctx.globalAlpha = 1;
 
           Graphics.eachRow(function(row, col) {
             var left = x + s * col;
@@ -54,8 +55,16 @@
             }
           });
 
-          if (undefined != winner && null != winner && Game.States.Tie != winner[0]) {
-            Graphics.drawWinner(ctx, winner);
+          if (undefined != winner && null != winner) {
+            if (Game.States.Tie != winner[0]) {
+              Graphics.drawWinner(ctx, winner);
+            }
+
+            ctx.beginPath();
+            ctx.globalAlpha = 0.5;
+            ctx.rect(0, 0, <%= grid_size %>, <%= grid_size %>);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
           }
         },
 
