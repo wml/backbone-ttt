@@ -1,0 +1,4 @@
+#!/bin/bash
+
+DIR=$(cd `dirname $0`/.. && pwd)
+find $DIR -type f | grep -v tmp/ | grep -v jquery | grep -v script/todo | xargs grep TODO
