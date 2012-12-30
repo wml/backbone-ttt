@@ -218,8 +218,9 @@
         },
 
         aiMoveSaved: function(winner, start) {
-          Graphics.draw(UI.game.getState(), winner);
           var responseTime = (new Date()).getTime() - start;
+
+          Graphics.draw(UI.game.getState(), winner);
           $('#movetime').text("response time: " + responseTime + "ms");
 
           if (null == winner) {

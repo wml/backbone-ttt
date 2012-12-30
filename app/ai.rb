@@ -22,16 +22,16 @@ module AI
     def self.move state
       state = JSON.parse(state)
       solutions = { }
-      return JSON.dump(self.algo(true, state, true, solutions))
+      return JSON.dump(self.algo(true, state, true, solutions, 1))
     end
 
-    def self.algo myturn, board, root, solutions
+    def self.algo myturn, board, root, solutions, depth
       boardkey = board.to_s
       if solutions.include? boardkey
         return solutions[boardkey]
       end
 
-      score = self.score(board)
+      score = (10 - depth) * self.score(board)
       children = self.children(myturn, board)
 
       if 0 == children.count or 0 != score
@@ -42,7 +42,7 @@ module AI
       bestmove = nil
 
       children.each do |child|
-        score = self.algo((not myturn), child, false, solutions)
+        score = self.algo((not myturn), child, false, solutions, 1 + depth)
 
         if nil == bestscore or \
           ((myturn and score > bestscore) or (not myturn and score < bestscore))
