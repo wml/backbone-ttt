@@ -10,7 +10,3 @@ end
 
 # TODO: move to mongo database
 # TODO: move to heroku
-# TODO: configurable first-turn (human always gets X as of now)
-# TODO: alternate AIs
-#       - precomputed AI
-#       - rule-based [heuristic] AI (as described on wikipedia)

@@ -1,6 +1,11 @@
 require 'json'
 require 'game'
 
+# TODO: alternate AIs
+#       - precomputed AI
+#       - rule-based [heuristic] AI (as described on wikipedia)
+#       - make sloppy minimax take a random position instead of 1st open
+
 module AI
   class FirstAvailable 
     def self.move state
@@ -117,6 +122,23 @@ module AI
         return FirstAvailable.move state
       end
       return Minimax.move state
+    end
+  end
+
+  class Heuristic
+    def self.move state
+      # TODO --------------------
+      # 1. check for win
+      # 2. block opponent win
+      # 3. check for fork
+      # 4. block opponent's fork
+      #    1. by setting up 2 in a row to force a block, so long as the block doesn't allow for a fork (diagonal with you in center, dont play corner)
+      #    2. block the fork directly
+      # 5. play center if available
+      # 6. play opposite corner if available
+      # 7. play any corner if available
+      # 8. play a side
+      # END algorithm
     end
   end
 end
