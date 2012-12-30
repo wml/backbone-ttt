@@ -24,6 +24,4 @@ class MinimaxTest < Test::Unit::TestCase
     forcedBlock = '[[1,2,0],[1,0,0],[0,0,0]]'
     assert_equal('[[1,2,0],[1,0,0],[2,0,0]]', @underTest.move(forcedBlock))
   end
-
-  # TODO: alpha beta pruning
 end
