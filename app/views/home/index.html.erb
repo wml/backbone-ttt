@@ -186,7 +186,7 @@
           $("#instructions").css("display", "none");          
           var rowcol = Graphics.hitTest(e);
 
-          if (!UI.game.move(rowcol.row, rowcol.col, UI.userMoveSaved)) {
+          if (!UI.game.move(rowcol.row, rowcol.col, UI.userMoveSaved, UI.moveError)) {
             alert("Bogus move, broski");
             UI.unlock(canvas);
           }
@@ -210,7 +210,7 @@
 
           if (null == winner) {
             var start = (new Date()).getTime();
-            game.getAIMove(ai, function(winner) { UI.aiMoveSaved(winner, start); });
+            game.getAIMove(ai, function(winner) { UI.aiMoveSaved(winner, start); }, UI.aiError);
           }
           else {
             UI.gameOver(winner);
@@ -241,11 +241,42 @@
 
           $("#newgame").css("display", "block");
           $("#winner").css("display", "block");
-        }
+        },
+
+        moveError: function(error) {
+          if (error == undefined || error == null || error == "") {
+            error = "unknown error";
+          }
+
+          UI.presentError("Failed to persist move. [" + error + "]");
+        },
+
+        aiError: function(error) {
+          if (error == undefined || error == null || error == "") {
+            error = "unknown error";
+          }
+
+          UI.presentError("Failed to communicate with AI. [" + error + "]");
+        },
+
+        presentError: function(message) {
+          message = "<p>" + message + "</p><p><em>The server appears to be temporarily unavailable.<br/>Please refresh the page and try again later.</em></p>";
+          $("#blocker div").html(message);
+          $("#blocker").css("display", "block");
+        },
+
+        scaleBlocker: function() {
+          $("#blocker")
+            .css("height", $(window).height())
+            .css("width", $(window).width());
+        },
       };
 
       $(document).ready(function() {
         $('#newgame').click(UI.reset);
+        $(window).resize(UI.scaleBlocker);
+
+        UI.scaleBlocker();
         UI.reset();
       });
     </script>
@@ -291,6 +322,12 @@
 
       img {
         display: none;
+      }
+
+      p {
+        font-size: 20px;
+        text-align: center;
+        line-height: 26px;
       }
 
       #newgame { 
@@ -343,6 +380,21 @@
         font-weight: normal;
       }
 
+      #blocker {
+        display: none;
+        z-index: 65535;
+        background-color: rgba(255, 255, 255, .5);
+        position: absolute;
+        left: 0px;
+        top: 0px;
+      }
+
+      #blocker div {
+        margin: 100px auto;
+        padding: 30px;
+        border: 1px solid #333;
+        background-color: #fff;
+      }
     </style>
 
     <div id="header">
@@ -377,3 +429,5 @@
 
     <%= image_tag "x.png", :id => "x-img" %>
     <%= image_tag "o.png", :id => "o-img" %>
+
+    <div id="blocker"><div></div></div>

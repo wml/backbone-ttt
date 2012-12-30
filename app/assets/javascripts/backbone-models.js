@@ -10,7 +10,7 @@ Game = Backbone.Model.extend({
         return JSON.parse(this.get("state"));
     },
 
-    move: function(row, col, callback) {
+    move: function(row, col, callback, errorCallback) {
         var state = this.getState();
 
         if (state[row][col] != Game.States.Open) {
@@ -18,24 +18,26 @@ Game = Backbone.Model.extend({
         }
 
         state[row][col] = Game.States.Human;
-        this.moveComplete(state, callback);
+        this.moveComplete(state, callback, errorCallback);
 
         return true;
     },
 
-    getAIMove: function(ai, callback) {
+    getAIMove: function(ai, callback, errorCallback) {
         var that = this;
         $.ajax('/ai/' + ai + '/move', {
             data: { "state": that.get("state") },
-            error: function(jqXHR, textStatus, errorThrown) { /* TODO */ },
+            error: function(jqXHR, textStatus, errorThrown) { 
+                    errorCallback(errorThrown.message);
+            },
             success: function(data, textStatus, jqXHR) {
                 state = data;
-                that.moveComplete(state, callback);
+                that.moveComplete(state, callback, errorCallback);
             }
         });
     },
 
-    moveComplete: function(state, callback) {
+    moveComplete: function(state, callback, errorCallback) {
         var moves = JSON.parse(this.get("moves"));
         var winner = this.winner(state);
 
@@ -49,13 +51,14 @@ Game = Backbone.Model.extend({
         }
 
         var that = this;
-        // TODO: error handling
         this.save(
             {}, {
-               success: function(model, response) {
+                error: function(model, error) { errorCallback(error.responseText); },
+                success: function(model, response) {
                     that.fetch({
+                        error: function(model, error) { errorCallback(error.responseText); },
                         success: function() { callback(winner); }
-               });
+                });
             }
         });
     },
