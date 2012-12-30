@@ -6,49 +6,44 @@ Game = Backbone.Model.extend({
         "moves": "[]",
     },
 
-    move: function(row, col, ai, callback) {
-        // TODO: still struggling in the backbone / rails model with where to
-        // put this kind of logic
+    getState: function() {
+        return JSON.parse(this.get("state"));
+    },
 
-        var state = JSON.parse(this.get('state'));
-        var moves = JSON.parse(this.get('moves'));
+    move: function(row, col, callback) {
+        var state = this.getState();
 
         if (state[row][col] != Game.States.Open) {
             return false;
         }
 
         state[row][col] = Game.States.Human;
-        moves.push(state);
-
-        var winner = this.winner(state);
-        if (null == winner) {
-            this.getAIMove(state, moves, ai, callback);
-        }
-        else {
-            this.set("status", winner[0]);
-            this.moveComplete(state, moves, winner, callback);
-        }
+        this.moveComplete(state, callback);
 
         return true;
     },
 
-    getAIMove: function(state, moves, ai, callback) {
-        // TODO: ability to select which AI
+    getAIMove: function(ai, callback) {
         var that = this;
         $.ajax('/ai/' + ai + '/move', {
-            data: { "state": JSON.stringify(state) },
+            data: { "state": that.get("state") },
             error: function(jqXHR, textStatus, errorThrown) { /* TODO */ },
             success: function(data, textStatus, jqXHR) {
                 state = data;
-                moves.push(state);
-                that.moveComplete(state, moves, that.winner(state), callback);
+                that.moveComplete(state, callback);
             }
         });
     },
 
-    moveComplete: function(state, moves, winner, callback) {
+    moveComplete: function(state, callback) {
+        var moves = JSON.parse(this.get("moves"));
+        var winner = this.winner(state);
+
+        moves.push(state);
+
         this.set("state", JSON.stringify(state));
         this.set("moves", JSON.stringify(moves));
+
         if (undefined != winner && null != winner) {
             this.set("status", winner[0]);
         }
@@ -59,13 +54,13 @@ Game = Backbone.Model.extend({
             {}, {
                success: function(model, response) {
                     that.fetch({
-                        success: function(){ callback(winner) }
+                        success: function() { callback(winner); }
                });
             }
         });
     },
 
-    winner: function(state) {
+    winner: function(state) { // TODO: return JSON object instead of array
       for (var row = 0; row < 3; ++row) {
           if (state[row][0] == state[row][1] 
               && state[row][1] == state[row][2]
@@ -97,13 +92,22 @@ Game = Backbone.Model.extend({
       ) {
           return [state[2][0], 'blur'];
       }
-        
-      return null;
+
+      for (var row = 0; row < 3; ++row) {
+          for (var col = 0; col < 3; ++col) {
+              if (state[row][col] == Game.States.Open) {
+                  return null;
+              }
+          }
+      }
+
+      return [Game.States.Tie];
     },
 });
 
 Game.States = {
     Open: 0,
     Human: 1,
-    Opponent: 2
+    Opponent: 2,
+    Tie: 3
 };

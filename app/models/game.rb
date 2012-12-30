@@ -5,7 +5,8 @@ class Game < ActiveRecord::Base
   @@States = {
     :Open => 0,
     :Human => 1,
-    :Opponent => 2
+    :Opponent => 2,
+    :Tie => 3,
   }
 
   def self.States
@@ -21,6 +22,8 @@ class Game < ActiveRecord::Base
 
   def self.winner board
     # TODO: BUG: add and not open to all below conditionals
+    # TODO: return Open or Tie depending on free space, update logic that calls this to check that instead of then re-checking for available children
+
     for row in 0..2
       if board[row][0] == board[row][1] and board[row][1] == board[row][2]
         return board[row][0]

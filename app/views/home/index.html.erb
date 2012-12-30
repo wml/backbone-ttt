@@ -5,17 +5,16 @@
 
     <!-- TODO
       set overflow attr on history after enough added
-      bug: frontend does not handle "tie" condition, requesting another move after move 9 and causing a JS bug
       status in DB: 3 should be draw
+      memoization for minimax to decrease move time
     -->
 
     <script type="text/javascript">      
-      var UI = {
+      var Graphics = {
         mainCellSize: <%= cell_size %>,
-        lastMoveDrawn: -1,
 
         getMainContext: function() {
-          return $('#board')[0].getContext("2d");
+          return UI.getBoard()[0].getContext("2d");
         },
 
         eachRow: function(callback) {
@@ -27,7 +26,7 @@
         },
 
         draw: function(state, winner) {
-          this.drawState(this.getMainContext(), 0, 0, UI.mainCellSize, state, winner);
+          this.drawState(this.getMainContext(), 0, 0, Graphics.mainCellSize, state, winner);
         },
 
         drawState: function(ctx, x, y, cellsize, state, winner) {
@@ -35,7 +34,7 @@
           var ximg = $('#x-img')[0];
           var oimg = $('#o-img')[0];
 
-          UI.eachRow(function(row, col) {
+          Graphics.eachRow(function(row, col) {
             var left = x + s * col;
             var top = y + s * row;
 
@@ -55,13 +54,13 @@
             }
           });
 
-          if (undefined != winner && null != winner) {
-            UI.drawWinner(ctx, winner);
+          if (undefined != winner && null != winner && Game.States.Tie != winner[0]) {
+            Graphics.drawWinner(ctx, winner);
           }
         },
 
         drawWinner: function(ctx, winner) {
-          var s = UI.mainCellSize;
+          var s = Graphics.mainCellSize;
           var color = (Game.States.Human == winner[0] ? '#0F0' : '#F00');
 
           ctx.beginPath();
@@ -91,58 +90,94 @@
 
         hitTest: function(e) { 
           return {
-            row: Math.floor(e.offsetY / UI.mainCellSize),
-            col: Math.floor(e.offsetX / UI.mainCellSize),
+            row: Math.floor(e.offsetY / Graphics.mainCellSize),
+            col: Math.floor(e.offsetX / Graphics.mainCellSize),
           };
         }
       };
 
-      function reset() {
-        UI.lastMoveDrawn = -1;
+      var UI = {
+        reset: function() {
+          UI.game = new Game;
 
-        var game = new Game;
-        var canvas = $("#board");
+          $("#winner").css("display", "none");
+          $("#newgame").css("display", "none");
+          $("#instructions").css("display", "block");
 
-        $("#winner").css("display", "none");
-        $("#newgame").css("display", "none");
-        $("#instructions").css("display", "block");
+          Graphics.draw(UI.game.getState(), null);
 
-        var updateUI = function(winner) {
-          UI.draw(JSON.parse(game.get("state")), winner);
+          UI.getBoard().click(UI.move);
+        },
 
-          if (undefined != winner && null != winner) {
-            $('#winner').text(
-              (Game.States.Human == winner[0]) ? "You Win :)" : "You Lose :("
-            );
-            canvas.unbind('click');
-            canvas.css("cursor", "default");
+        getBoard: function() {
+          return $("#board");
+        },
 
-            $("#newgame").css("display", "block");
-            $("#winner").css("display", "block");
+        move: function(e) {
+          var canvas = UI.getBoard();
+          UI.lock(canvas, "wait");
+
+          $("#instructions").css("display", "none");          
+          var rowcol = Graphics.hitTest(e);
+
+          if (!UI.game.move(rowcol.row, rowcol.col, UI.userMoveSaved)) {
+            alert("Bogus move, broski");
+            UI.unlock(canvas);
+          }
+        },
+
+        lock: function(canvas, cursor) {
+          canvas.css("cursor", cursor);
+          canvas.unbind("click");
+        },
+
+        unlock: function(canvas) {
+          canvas.css("cursor", "pointer");
+          canvas.click(UI.move);
+        },
+
+        userMoveSaved: function(winner) {
+          var game = UI.game;
+          var ai = $('input[name=ai]:checked').val();
+
+          Graphics.draw(game.getState(), winner);
+
+          if (null == winner) {
+            game.getAIMove(ai, UI.aiMoveSaved);
           }
           else {
-            canvas.css("cursor", "pointer");
+            UI.gameOver(winner);
           }
-        };
-        
-        updateUI();
+        },
 
-        canvas.click(function(e) {
-          this.style.cursor = "wait";
-          $("#instructions").css("display", "none");
-          var rowcol = UI.hitTest(e);
-          var ai = $('input[name=ai]:checked').val();
-          
-          if (!game.move(rowcol.row, rowcol.col, ai, updateUI)) {
-            canvas.css("cursor", "pointer");
-            alert("Bogus move, broski");
+        aiMoveSaved: function(winner) {
+          Graphics.draw(UI.game.getState(), winner);
+
+          if (null == winner) {
+            UI.unlock(UI.getBoard());
           }
-        });
-      }
+          else {
+            UI.gameOver(winner);
+          }
+        },
+
+        gameOver: function(winner) {
+          var message = {};
+          message[Game.States.Human] = "You Win :)",
+          message[Game.States.Opponent] = "You Lose :(",
+          message[Game.States.Tie] = "Tie :|",
+
+          $('#winner').text(message[winner[0]]);
+          UI.lock(UI.getBoard(), "default");
+
+          $("#newgame").css("display", "block");
+          $("#winner").css("display", "block");
+        }
+      };
 
       $(document).ready(function() {
-        $('#newgame').click(reset);
-        reset();
+        $('#newgame').click(UI.reset);
+        UI.reset();
       });
     </script>
 
