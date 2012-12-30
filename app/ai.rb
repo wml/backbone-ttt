@@ -110,4 +110,13 @@ module AI
       return scores[Game.winner(board)]
     end
   end
+
+  class Sloppy
+    def self.move state
+      if 0 == rand(10)
+        return FirstAvailable.move state
+      end
+      return Minimax.move state
+    end
+  end
 end

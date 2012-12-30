@@ -330,6 +330,10 @@
         text-align: center;
         line-height: 26px;
       }
+      
+      label span {
+        color: #44F;
+      }
 
       #newgame { 
         cursor: pointer;
@@ -367,7 +371,7 @@
       #history {
         overflow-y: scroll;
         width: 250px;
-        height: 250px;
+        height: 190px;
       }
 
       #history canvas {
@@ -396,6 +400,40 @@
         border: 1px solid #333;
         background-color: #fff;
       }
+
+      .tooltip {
+        color: #44F;
+        position: relative;
+      }
+
+      .tooltip:hover {
+        background-color: #fff;
+        color: #44F;
+      }
+
+      .tooltip span {
+        margin-left: -20000px;
+        position: absolute;
+        background-color: #fff;
+        padding: 20px;
+        border: 1px dashed #666;
+      }
+
+      .tooltip:hover span {
+        border-radius: 5px 5px;
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px; 
+        box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1);
+        -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
+        -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
+        position: absolute;
+        left: -120px;
+        top: 20px;
+        z-index: 999;
+        margin-left: 0px;
+        width: 160px;
+        text-align: justify;
+      }
     </style>
 
     <div id="header">
@@ -412,10 +450,16 @@
         <h3 class="notop">AI <span id="movetime"></span></h3>
 
         <input type="radio" value="Minimax" name="ai" checked="checked" />
-        <label for="Minimax">Minimax</label>
+        <label for="Minimax">Minimax</label><br/>
+
+        <input type="radio" value="Heuristic" disabled name="ai" />
+        <label for="Heuristic">Heuristic</label><br/>
 
         <input type="radio" value="FirstAvailable" name="ai"/>
-        <label for="FirstAvailable">First Open</label>
+        <label for="FirstAvailable">First Open</label><br/>
+
+        <input type="radio" value="Sloppy" name="ai" />
+        <label for="Sloppy">Sloppy Minimax <a class="tooltip">[?]<span>90% of the time the Minimax algorithm will be applied, and 10% of the time the first open position is selected.</span></a></label><br/>
 
         <h3>History</h3>
         <div id="history"><canvas id="history_canvas" width="<%= mini_grid_size %>"></canvas></div>
