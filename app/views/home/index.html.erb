@@ -1,7 +1,7 @@
     <% cell_size = 125 %>
     <% grid_size = 3 * cell_size %>
-    <% mini_cell_size = 75 %>
-    <% mini_grid_size = 3 * 75 %>
+    <% mini_cell_size = 50 %>
+    <% mini_grid_size = 3 * mini_cell_size %>
 
     <!-- TODO
       set overflow attr on history after enough added
@@ -12,9 +12,19 @@
     <script type="text/javascript">      
       var Graphics = {
         mainCellSize: <%= cell_size %>,
+        miniCellSize: <%= mini_cell_size %>,
+        lastMoveDrawn: -1,
 
         getMainContext: function() {
           return UI.getBoard()[0].getContext("2d");
+        },
+
+        getHistoryContext: function() {
+          return Graphics.getHistory()[0].getContext("2d");
+        },
+
+        getHistory: function() {
+          return $("#history_canvas");
         },
 
         eachRow: function(callback) {
@@ -25,14 +35,63 @@
           }
         },
 
-        draw: function(state, winner) {
-          this.drawState(
-            this.getMainContext(), 0, 0, Graphics.mainCellSize, state, winner
-          );
+        clearHistory: function() {
+          Graphics.lastMoveDrawn = -1;
+          Graphics.getHistory()[0].height = 0;
         },
 
-        drawState: function(ctx, x, y, cellsize, state, winner) {
+        draw: function(state, winner) {
+          this.drawState(
+            this.getMainContext(), 0, Graphics.mainCellSize, state, winner
+          );
+
+          var last = Graphics.lastMoveDrawn;
+          if (-1 != last) {
+            var historyContext = this.getHistoryContext();
+            var heightWithPad = <%=mini_grid_size%> + 30;
+
+            Graphics.sizeHistory(
+              historyContext, 
+              (1 + last) * heightWithPad, 
+              heightWithPad
+            );
+
+            $("#history").scrollTop(0);
+
+            this.drawState(
+              historyContext,
+              15,
+              Graphics.miniCellSize, 
+              state, 
+              winner
+            );
+          }
+
+          ++Graphics.lastMoveDrawn;
+        },
+
+        sizeHistory: function(context, height, top) {
+            var history = Graphics.getHistory()[0];
+
+            if (0 == history.height) {
+              history.height = height;
+            }
+            else {
+              var tmp_e = $("<canvas></canvas>")[0];
+              tmp_e.width = <%=mini_grid_size%>
+              tmp_e.height = height;
+
+              var tmp_c = tmp_e.getContext("2d");
+              tmp_c.drawImage(history, 0, 0);
+
+              history.height = height;
+              context.drawImage(tmp_e, 0, top);
+            }
+        },
+
+        drawState: function(ctx, y, cellsize, state, winner) {
           var s = cellsize;
+          var x = 0;
           var ximg = $('#x-img')[0];
           var oimg = $('#o-img')[0];
           ctx.globalAlpha = 1;
@@ -50,50 +109,50 @@
             ctx.stroke();
 
             if (Game.States.Human == state[row][col]) {
-              ctx.drawImage(ximg, left, top);
+              ctx.drawImage(ximg, left, top, cellsize, cellsize);
             }
             else if (Game.States.Opponent == state[row][col]) {
-              ctx.drawImage(oimg, left, top);
+              ctx.drawImage(oimg, left, top, cellsize, cellsize);
             }
           });
 
           if (null != winner) {
             if (Game.States.Tie != winner.who) {
-              Graphics.drawWinner(ctx, winner);
+              Graphics.drawWinner(ctx, winner, y, cellsize);
             }
 
             ctx.beginPath();
             ctx.globalAlpha = 0.5;
-            ctx.rect(0, 0, <%= grid_size %>, <%= grid_size %>);
+            ctx.rect(0, y, 3 * cellsize, 3 * cellsize);
             ctx.fillStyle = "#fff";
             ctx.fill();
           }
         },
 
-        drawWinner: function(ctx, winner) {
-          var s = Graphics.mainCellSize;
+        drawWinner: function(ctx, winner, y, cellsize) {
+          var s = cellsize;
           var color = (Game.States.Human == winner.who ? '#0F0' : '#F00');
 
           ctx.beginPath();
-          ctx.lineWidth = 10;
+          ctx.lineWidth = cellsize / 12;
           ctx.lineCap = 'round';
           ctx.strokeStyle = color;
 
           if ('row' == winner.how) {
-            ctx.moveTo(s/4, s/2 + s * winner.where);
-            ctx.lineTo(s * 3 - s / 4, s/2 + s * winner.where);
+            ctx.moveTo(s/4, y + s/2 + s * winner.where);
+            ctx.lineTo(s * 3 - s / 4, y + s/2 + s * winner.where);
           }
           else if ('col' == winner.how) {
-            ctx.moveTo(s/2 + s * winner.where, s/4);
-            ctx.lineTo(s/2 + s * winner.where, s * 3 - s / 4);
+            ctx.moveTo(s/2 + s * winner.where, y + s/4);
+            ctx.lineTo(s/2 + s * winner.where, y + s * 3 - s / 4);
           }
           else if ('ulbr' == winner.how) {
-            ctx.moveTo(s/4, s/4);
-            ctx.lineTo(s * 3 - s / 4, s * 3 - s / 4);
+            ctx.moveTo(s/4, y + s/4);
+            ctx.lineTo(s * 3 - s / 4, y + s * 3 - s / 4);
           }
           else {
-            ctx.moveTo(s/4, s * 3 - s / 4);
-            ctx.lineTo(s * 3 - s / 4, s/4);
+            ctx.moveTo(s/4, y + s * 3 - s / 4);
+            ctx.lineTo(s * 3 - s / 4, y + s/4);
           }
 
           ctx.stroke();
@@ -115,6 +174,7 @@
           $("#newgame").css("display", "none");
           $("#instructions").css("display", "block");
 
+          Graphics.clearHistory();
           Graphics.draw(UI.game.getState(), null);
 
           UI.getBoard().click(UI.move);
@@ -237,7 +297,7 @@
 
       #newgame { 
         cursor: pointer;
-        text-decoration: underline;
+        text-decoration: none;
         color: #44F;
       }
 
@@ -269,9 +329,14 @@
       }
 
       #history {
-        overflow-y: hidden;
+        overflow-y: auto;
         width: 250px;
         height: 250px;
+      }
+
+      #history canvas {
+        margin: 0 auto;
+        display: block;
       }
 
     </style>
@@ -296,7 +361,7 @@
         <label for="FirstAvailable">First Open</label>
 
         <h3>Move History</h3>
-        <div id="history"><canvas id="history_canvas" width="<%= mini_grid_size %>" height="<%= 9 * (mini_grid_size + 20) %>"></canvas></div>
+        <div id="history"><canvas id="history_canvas" width="<%= mini_grid_size %>"></canvas></div>
       </div>
 
       <div class="clear"></div>
