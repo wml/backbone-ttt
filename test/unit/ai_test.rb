@@ -80,4 +80,19 @@ class HeuristicTest <  Test::Unit::TestCase
     diagonalBlock = '[[0,2,1],[0,0,0],[1,0,0]]'
     assert_equal('[[0,2,1],[0,2,0],[1,0,0]]', @underTest.move(diagonalBlock))
   end
+
+  def test_fork_taken
+    forkable = '[[2,1,1],[1,0,0],[2,0,0]]'
+    assert_equal('[[2,1,1],[1,0,0],[2,0,2]]', @underTest.move(forkable))
+  end
 end
+
+      # TODO --------------------
+      # 4. block opponent's fork
+      #    1. by setting up 2 in a row to force a block, so long as the block doesn't allow for a fork (diagonal with you in center, dont play corner)
+      #    2. block the fork directly
+      # 5. play center if available
+      # 6. play opposite corner if available
+      # 7. play any corner if available
+      # 8. play a side
+      # END algorithm
