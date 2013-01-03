@@ -2,7 +2,6 @@ require 'json'
 require 'game'
 
 # TODO: alternate AIs
-#   - finish heuristic AI
 #   - make sloppy minimax take a random position instead of 1st open
 
 module AI
@@ -137,8 +136,12 @@ module AI
         end
       end
 
-      def move idx
-        @move_impl.call idx
+      def move idx, who
+        @move_impl.call idx, who
+      end
+
+      def clear idx
+        @move_impl.call idx, Game.States[:Open]
       end
     end
 
@@ -149,7 +152,8 @@ module AI
         :fork,
         :block_fork,
         :center,
-        :opposite_corner_or_any_corner,
+        :opposite_corner,
+        :any_corner,
         :first_available
       ]
       
@@ -165,7 +169,7 @@ module AI
     def self.winning_move state
       return self._eval_state state, lambda { |linestate|
         if linestate.opponent.count == 2 and linestate.available.count > 0
-          linestate.move linestate.available[0]
+          linestate.move linestate.available[0], Game.States[:Opponent]
           return true
         end
         return false
@@ -175,7 +179,7 @@ module AI
     def self.block_win state
       return self._eval_state state, lambda { |linestate|
         if linestate.human.count == 2 and linestate.available.count > 0
-          linestate.move linestate.available[0]
+          linestate.move linestate.available[0], Game.States[:Opponent]
           return true
         end
         return false
@@ -183,15 +187,67 @@ module AI
     end
 
     def self.fork state
+      result = self._first_fork state, Game.States[:Opponent]
+      if result
+        state[result[0]][result[1]] = Game.States[:Opponent]
+      end
+      return nil != result
+    end
+
+    def self.block_fork state
+      human_fork_location = self._first_fork state, Game.States[:Human]
+      if nil == human_fork_location
+        return false
+      end
+
+      moved = self._eval_state state, lambda { |linestate|
+        if linestate.opponent.count == 1 and linestate.available.count == 2
+          for i in 0..1
+            moveidx = linestate.available[i]
+            blockidx = linestate.available[(1 + i) % 2]
+
+            linestate.move moveidx, Game.States[:Opponent]
+            linestate.move blockidx, Game.States[:Human]
+
+            human_win_opportunities = 0
+            self._eval_state state, lambda { |lsinner|
+              if lsinner.available.count == 1 and lsinner.human.count == 2
+                human_win_opportunities += 1
+              end
+              return false
+            }
+
+            linestate.clear blockidx
+
+            if human_win_opportunities < 2
+              return true
+            end
+
+            linestate.clear moveidx
+          end
+        end
+        return false
+      }
+      
+      if not moved
+        state[human_fork_location[0]][human_fork_location[1]] = Game.States[:Opponent]
+      end
+
+      return true
+    end
+
+    def self._first_fork state, who
       for row in 0..2
         for col in 0..2
           if Game.States[:Open] == state[row][col]
-            state[row][col] = Game.States[:Opponent]
+            state[row][col] = who
             opportunities = 0
 
             self._eval_state(
               state, lambda { |linestate|
-                if linestate.opponent.count == 2 and linestate.available.count > 0
+                if ((who == Game.States[:Opponent] and linestate.opponent.count == 2) \
+                    or (who == Game.States[:Human] and linestate.human.count == 2)) \
+                    and linestate.available.count > 0
                   opportunities += 1
                 end
                 return false
@@ -199,7 +255,8 @@ module AI
             )
     
             if opportunities >= 2
-              return true
+              state[row][col] = Game.States[:Open]
+              return [row, col]
             end
 
             state[row][col] = Game.States[:Open]
@@ -207,27 +264,47 @@ module AI
         end
       end
             
-      return false
-    end
-
-    def self.block_fork state
-      # 1) detect fork.
-      # 2) if exists
-      # 2a) place O everywhere we can create a win op.
-      # 2b) if opponent block doesnt create a fork for him, take move
-      # 3) directly block fork
-            
-      return false
+      return nil
     end
 
     def self.center state
-      # TODO
+      if state[1][1] == Game.States[:Open]
+        state[1][1] = Game.States[:Opponent]
+        return true
+      end
       return false
     end
 
-    def self.opposite_corner_or_any_corner state
-      # TODO
-      return false
+    def self.opposite_corner state
+      if state[0][0] == Game.States[:Human] and state[2][2] == Game.States[:Open]
+        state[2][2] = Game.States[:Opponent]
+      elsif state[0][2] == Game.States[:Human] and state[2][0] == Game.States[:Open]
+        state[2][0] = Game.States[:Opponent]
+      elsif state[2][0] == Game.States[:Human] and state[0][2] == Game.States[:Open]
+        state[0][2] = Game.States[:Opponent]
+      elsif state[2][2] == Game.States[:Human] and state[0][0] == Game.States[:Open]
+        state[0][0] = Game.States[:Opponent]
+      else
+        return false
+      end
+
+      return true
+    end
+
+    def self.any_corner state
+      if state[2][2] == Game.States[:Open]
+        state[2][2] = Game.States[:Opponent]
+      elsif state[2][0] == Game.States[:Open]
+        state[2][0] = Game.States[:Opponent]
+      elsif state[0][2] == Game.States[:Open]
+        state[0][2] = Game.States[:Opponent]
+      elsif state[0][0] == Game.States[:Open]
+        state[0][0] = Game.States[:Opponent]
+      else 
+        return false
+      end
+
+      return true
     end
 
     def self.first_available state
@@ -250,7 +327,7 @@ module AI
     def self._eval_rows state, report_state
       0.upto(state.count - 1) do |row|
         linestate = LineState.new(
-          lambda {|idx| state[row][idx] = Game.States[:Opponent]}
+          lambda {|idx, who| state[row][idx] = who }
         )
 
         0.upto(state[row].count - 1) do |col|
@@ -268,7 +345,7 @@ module AI
     def self._eval_cols state, report_state
       0.upto(state.count - 1) do |col|
         linestate = LineState.new(
-          lambda {|idx| state[idx][col] = Game.States[:Opponent]}
+          lambda {|idx, who| state[idx][col] = who}
         )
 
         0.upto(state[col].count - 1) do |row|
@@ -285,7 +362,7 @@ module AI
   
     def self._eval_ulbr state, report_state
       linestate = LineState.new(
-        lambda {|idx| state[idx][idx] = Game.States[:Opponent]}
+        lambda {|idx, who| state[idx][idx] = who}
       )
 
       0.upto(2) do |rowcol|
@@ -297,7 +374,7 @@ module AI
 
     def self._eval_blur state, report_state
       linestate = LineState.new(
-        lambda {|idx| state[2 - idx][idx] = Game.States[:Opponent]}
+        lambda {|idx, who| state[2 - idx][idx] = who}
       )
 
       0.upto(2) do |rowcol|

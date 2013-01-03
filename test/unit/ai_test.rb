@@ -85,14 +85,37 @@ class HeuristicTest <  Test::Unit::TestCase
     forkable = '[[2,1,1],[1,0,0],[2,0,0]]'
     assert_equal('[[2,1,1],[1,0,0],[2,0,2]]', @underTest.move(forkable))
   end
-end
 
-      # TODO --------------------
-      # 4. block opponent's fork
-      #    1. by setting up 2 in a row to force a block, so long as the block doesn't allow for a fork (diagonal with you in center, dont play corner)
-      #    2. block the fork directly
-      # 5. play center if available
-      # 6. play opposite corner if available
-      # 7. play any corner if available
-      # 8. play a side
-      # END algorithm
+  def test_fork_preempted_by_forced_block
+    preemptable = '[[0,0,1],[0,2,0],[1,0,0]]'
+    assert_equal('[[0,0,1],[2,2,0],[1,0,0]]', @underTest.move(preemptable))
+  end
+
+  def test_fork_blocked
+    direct_block_required = '[[1,2,0],[0,0,0],[0,1,0]]'
+    assert_equal('[[1,2,0],[0,0,0],[2,1,0]]', @underTest.move(direct_block_required))
+  end
+
+  def test_center_preferable_if_no_wins_or_blocks
+    no_advantage = '[[1,0,0],[0,0,0],[0,0,0]]'
+    assert_equal('[[1,0,0],[0,2,0],[0,0,0]]', @underTest.move(no_advantage))
+  end
+
+  def test_opposite_corner_preferable_if_center_taken
+    opposite_corner_open = '[[1,0,0],[0,2,0],[0,0,0]]'
+    assert_equal('[[1,0,0],[0,2,0],[0,0,2]]', @underTest.move(opposite_corner_open))
+  end
+
+  def test_any_corner_preferable_to_side
+    no_advantage_center_taken = '[[0,0,0],[0,1,0],[0,0,0]]'
+    assert_equal(
+      '[[0,0,0],[0,1,0],[0,0,2]]',
+      @underTest.move(no_advantage_center_taken)
+    )
+  end
+
+  def test_side_taken_by_default
+    no_good_move = '[[2,1,2],[0,1,0],[1,2,1]]'
+    assert_equal('[[2,1,2],[2,1,0],[1,2,1]]', @underTest.move(no_good_move))
+  end
+end
