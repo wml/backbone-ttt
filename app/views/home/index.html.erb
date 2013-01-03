@@ -3,8 +3,6 @@
     <% mini_cell_size = 50 %>
     <% mini_grid_size = 3 * mini_cell_size %>
 
-    <!-- TODO: improve scroll effect for history -->
-
     <script type="text/javascript">      
       var Graphics = {
         mainCellSize: <%= cell_size %>,
@@ -103,7 +101,7 @@
             ctx.rect(left, top, s, s);
             ctx.fillStyle = 
               (null != lastState && lastState[row][col] != state[row][col]) 
-                ? "bbf"
+                ? "#bbbbff"
                 : "#e8e8e8";
             ctx.fill();
             ctx.lineWidth = 1;
@@ -161,11 +159,38 @@
         },
 
         hitTest: function(e) { 
+          coords = this.relativeCoords(e);
           return {
-            row: Math.floor(e.offsetY / Graphics.mainCellSize),
-            col: Math.floor(e.offsetX / Graphics.mainCellSize),
+            row: Math.floor(coords.y / Graphics.mainCellSize),
+            col: Math.floor(coords.x / Graphics.mainCellSize),
           };
-        }
+        },
+
+        relativeCoords: function(event) {
+          if (event.offsetX != undefined) {
+            return { x: event.offsetX, y: event.offsetY };
+          }
+          return this.firefoxCoords(event);
+        },
+
+        firefoxCoords: function(event) {
+          var totalOffsetX = 0;
+          var totalOffsetY = 0;
+          var canvasX = 0;
+          var canvasY = 0;
+          var currentElement = event.target;
+
+          do{
+              totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+              totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+          }
+          while(currentElement = currentElement.offsetParent);
+
+          canvasX = event.pageX - totalOffsetX;
+          canvasY = event.pageY - totalOffsetY;
+
+          return { x: canvasX, y: canvasY };
+        },
       };
 
       var UI = {
