@@ -1,9 +1,6 @@
 require 'json'
 require 'game'
 
-# TODO: alternate AIs
-#   - make sloppy minimax take a random position instead of 1st open
-
 module AI
   module_function
   def _take_first_available state
@@ -388,9 +385,26 @@ module AI
   class Sloppy
     def self.move state
       if 0 == rand(10)
-        return FirstAvailable.move state
+        return JSON.dump(self.random_move(JSON.parse(state)))
       end
       return Minimax.move state
+    end
+
+    def self.random_move state
+      moves = []
+
+      for row in 0..2
+        for col in 0..2
+          if state[row][col] == Game.States[:Open]
+            moves.append([row, col])
+          end
+        end
+      end
+
+      move = moves[rand(moves.count)]
+      state[move[0]][move[1]] = Game.States[:Opponent]
+
+      return state
     end
   end
 end
