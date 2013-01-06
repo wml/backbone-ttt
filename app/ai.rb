@@ -127,8 +127,8 @@ module AI
 
       def update who, idx
         case who
-        when Game.States[:Open]: @available.push(idx)
-        when Game.States[:Human]: @human.push(idx)
+        when Game.States[:Open] then @available.push(idx)
+        when Game.States[:Human] then @human.push(idx)
         else @opponent.push(idx)
         end
       end
