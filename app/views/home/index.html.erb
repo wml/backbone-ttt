@@ -3,8 +3,6 @@
     <% mini_cell_size = 50 %>
     <% mini_grid_size = 3 * mini_cell_size %>
 
-    <!-- TODO: don't shade board on GO in history pane -->
-
     <script type="text/javascript">      
       var Graphics = {
         mainCellSize: <%= cell_size %>,
@@ -123,11 +121,13 @@
               Graphics.drawWinner(ctx, winner, y, cellsize);
             }
 
-            ctx.beginPath();
-            ctx.globalAlpha = 0.5;
-            ctx.rect(0, y, 3 * cellsize, 3 * cellsize);
-            ctx.fillStyle = "#fff";
-            ctx.fill();
+            if (null == lastState) {
+              ctx.beginPath();
+              ctx.globalAlpha = 0.5;
+              ctx.rect(0, y, 3 * cellsize, 3 * cellsize);
+              ctx.fillStyle = "#fff";
+              ctx.fill();
+            }
           }
         },
 
