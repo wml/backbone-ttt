@@ -2,23 +2,24 @@ Game = Backbone.Model.extend({
     urlRoot: '/games',
 
     defaults: {
-        "state": "[[0,0,0],[0,0,0],[0,0,0]]",
+        "board": "[[0,0,0],[0,0,0],[0,0,0]]",
+        "status": 0,
         "moves": "[]",
     },
 
-    getState: function() {
-        return JSON.parse(this.get("state"));
+    getBoard: function() {
+        return JSON.parse(this.get("board"));
     },
 
     move: function(row, col, callback, errorCallback) {
-        var state = this.getState();
+        var board = this.getBoard();
 
-        if (state[row][col] != Game.States.Open) {
+        if (board[row][col] != Game.States.Open) {
             return false;
         }
 
-        state[row][col] = Game.States.Human;
-        this.moveComplete(state, callback, errorCallback);
+        board[row][col] = Game.States.Human;
+        this.moveComplete(board, callback, errorCallback);
 
         return true;
     },
@@ -26,24 +27,24 @@ Game = Backbone.Model.extend({
     getAIMove: function(ai, callback, errorCallback) {
         var that = this;
         $.ajax('/ai/' + ai + '/move', {
-            data: { "state": that.get("state") },
+            data: { "board": that.get("board") },
             error: function(jqXHR, textStatus, errorThrown) { 
                     errorCallback(errorThrown.message);
             },
             success: function(data, textStatus, jqXHR) {
-                state = data;
-                that.moveComplete(state, callback, errorCallback);
+                var board = data;
+                that.moveComplete(board, callback, errorCallback);
             }
         });
     },
 
-    moveComplete: function(state, callback, errorCallback) {
+    moveComplete: function(board, callback, errorCallback) {
         var moves = JSON.parse(this.get("moves"));
-        var winner = this.winner(state);
+        var winner = this.winner(board);
 
-        moves.push(state);
+        moves.push(board);
 
-        this.set("state", JSON.stringify(state));
+        this.set("board", JSON.stringify(board));
         this.set("moves", JSON.stringify(moves));
 
         if (undefined != winner && null != winner) {
@@ -61,46 +62,46 @@ Game = Backbone.Model.extend({
         );
     },
 
-    winner: function(state) {
+    winner: function(board) {
       var result = function(who, how, where) {
           return {'who': who, 'how': how, 'where': where};
       };
 
       for (var row = 0; row < 3; ++row) {
-          if (state[row][0] == state[row][1] 
-              && state[row][1] == state[row][2]
-              && Game.States.Open != state[row][0]
+          if (board[row][0] == board[row][1] 
+              && board[row][1] == board[row][2]
+              && Game.States.Open != board[row][0]
           ) {
-              return result(state[row][0], 'row', row);
+              return result(board[row][0], 'row', row);
           }
       }
 
       for (var col = 0; col < 3; ++col) {
-          if (state[0][col] == state[1][col] 
-              && state[1][col] == state[2][col]
-              && Game.States.Open != state[0][col]
+          if (board[0][col] == board[1][col] 
+              && board[1][col] == board[2][col]
+              && Game.States.Open != board[0][col]
           ) {
-              return result(state[0][col], 'col', col);
+              return result(board[0][col], 'col', col);
           }
       }
 
-      if (state[0][0] == state[1][1] 
-          && state[1][1] == state[2][2]
-          && Game.States.Open != state[0][0]
+      if (board[0][0] == board[1][1] 
+          && board[1][1] == board[2][2]
+          && Game.States.Open != board[0][0]
       ) {
-          return result(state[0][0], 'ulbr');
+          return result(board[0][0], 'ulbr');
       }
 
-      if (state[2][0] == state[1][1] 
-          && state[1][1] == state[0][2]
-          && Game.States.Open != state[2][0]
+      if (board[2][0] == board[1][1] 
+          && board[1][1] == board[0][2]
+          && Game.States.Open != board[2][0]
       ) {
-          return result(state[2][0], 'blur');
+          return result(board[2][0], 'blur');
       }
 
       for (var row = 0; row < 3; ++row) {
           for (var col = 0; col < 3; ++col) {
-              if (state[row][col] == Game.States.Open) {
+              if (board[row][col] == Game.States.Open) {
                   return null;
               }
           }
@@ -114,5 +115,5 @@ Game.States = {
     Open: 0,
     Human: 1,
     Opponent: 2,
-    Tie: 3
+    Tie: 3,
 };

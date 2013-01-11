@@ -3,27 +3,27 @@ require 'game'
 
 module AI
   module_function
-  def _take_first_available state
-    0.upto(state.count - 1) do |row|
-      0.upto(state[row].count - 1) do |col|
-        if Game.States[:Open] == state[row][col]
-          state[row][col] = Game.States[:Opponent]
-          return state
+  def _take_first_available board
+    0.upto(board.count - 1) do |row|
+      0.upto(board[row].count - 1) do |col|
+        if Game.States[:Open] == board[row][col]
+          board[row][col] = Game.States[:Opponent]
+          return board
         end
       end
     end
   end
 
   class FirstAvailable 
-    def self.move state
-      return JSON.dump(AI._take_first_available(JSON.parse(state)))
+    def self.move board
+      return JSON.dump(AI._take_first_available(JSON.parse(board)))
     end
   end
 
   class Minimax
-    def self.move state
-      state = JSON.parse(state)
-      return JSON.dump(self.algo(true, state, true, { }, 1, -100, 100))
+    def self.move board
+      board = JSON.parse(board)
+      return JSON.dump(self.algo(true, board, true, { }, 1, -100, 100))
     end
 
     def self.algo myturn, board, root, solutions, depth, alpha, beta
@@ -142,7 +142,7 @@ module AI
       end
     end
 
-    def self.move state
+    def self.move board
       rules = [
         :winning_move,
         :block_win,
@@ -154,17 +154,17 @@ module AI
         :first_available
       ]
       
-      state = JSON.parse(state)
+      board = JSON.parse(board)
 
       rules.each do |rule|
-        if Heuristic.send rule, state
-          return JSON.dump(state)
+        if Heuristic.send rule, board
+          return JSON.dump(board)
         end
       end
     end
    
-    def self.winning_move state
-      return self._eval_state state, lambda { |linestate|
+    def self.winning_move board
+      return self._eval_state board, lambda { |linestate|
         if linestate.opponent.count == 2 and linestate.available.count > 0
           linestate.move linestate.available[0], Game.States[:Opponent]
           return true
@@ -173,8 +173,8 @@ module AI
       }
     end
 
-    def self.block_win state
-      return self._eval_state state, lambda { |linestate|
+    def self.block_win board
+      return self._eval_state board, lambda { |linestate|
         if linestate.human.count == 2 and linestate.available.count > 0
           linestate.move linestate.available[0], Game.States[:Opponent]
           return true
@@ -183,21 +183,21 @@ module AI
       }
     end
 
-    def self.fork state
-      result = self._first_fork state, Game.States[:Opponent]
+    def self.fork board
+      result = self._first_fork board, Game.States[:Opponent]
       if result
-        state[result[0]][result[1]] = Game.States[:Opponent]
+        board[result[0]][result[1]] = Game.States[:Opponent]
       end
       return nil != result
     end
 
-    def self.block_fork state
-      human_fork_location = self._first_fork state, Game.States[:Human]
+    def self.block_fork board
+      human_fork_location = self._first_fork board, Game.States[:Human]
       if nil == human_fork_location
         return false
       end
 
-      moved = self._eval_state state, lambda { |linestate|
+      moved = self._eval_state board, lambda { |linestate|
         if linestate.opponent.count == 1 and linestate.available.count == 2
           for i in 0..1
             moveidx = linestate.available[i]
@@ -207,7 +207,7 @@ module AI
             linestate.move blockidx, Game.States[:Human]
 
             human_win_opportunities = 0
-            self._eval_state state, lambda { |lsinner|
+            self._eval_state board, lambda { |lsinner|
               if lsinner.available.count == 1 and lsinner.human.count == 2
                 human_win_opportunities += 1
               end
@@ -227,21 +227,21 @@ module AI
       }
       
       if not moved
-        state[human_fork_location[0]][human_fork_location[1]] = Game.States[:Opponent]
+        board[human_fork_location[0]][human_fork_location[1]] = Game.States[:Opponent]
       end
 
       return true
     end
 
-    def self._first_fork state, who
+    def self._first_fork board, who
       for row in 0..2
         for col in 0..2
-          if Game.States[:Open] == state[row][col]
-            state[row][col] = who
+          if Game.States[:Open] == board[row][col]
+            board[row][col] = who
             opportunities = 0
 
             self._eval_state(
-              state, lambda { |linestate|
+              board, lambda { |linestate|
                 if ((who == Game.States[:Opponent] and linestate.opponent.count == 2) \
                     or (who == Game.States[:Human] and linestate.human.count == 2)) \
                     and linestate.available.count > 0
@@ -252,11 +252,11 @@ module AI
             )
     
             if opportunities >= 2
-              state[row][col] = Game.States[:Open]
+              board[row][col] = Game.States[:Open]
               return [row, col]
             end
 
-            state[row][col] = Game.States[:Open]
+            board[row][col] = Game.States[:Open]
           end
         end
       end
@@ -264,23 +264,23 @@ module AI
       return nil
     end
 
-    def self.center state
-      if state[1][1] == Game.States[:Open]
-        state[1][1] = Game.States[:Opponent]
+    def self.center board
+      if board[1][1] == Game.States[:Open]
+        board[1][1] = Game.States[:Opponent]
         return true
       end
       return false
     end
 
-    def self.opposite_corner state
-      if state[0][0] == Game.States[:Human] and state[2][2] == Game.States[:Open]
-        state[2][2] = Game.States[:Opponent]
-      elsif state[0][2] == Game.States[:Human] and state[2][0] == Game.States[:Open]
-        state[2][0] = Game.States[:Opponent]
-      elsif state[2][0] == Game.States[:Human] and state[0][2] == Game.States[:Open]
-        state[0][2] = Game.States[:Opponent]
-      elsif state[2][2] == Game.States[:Human] and state[0][0] == Game.States[:Open]
-        state[0][0] = Game.States[:Opponent]
+    def self.opposite_corner board
+      if board[0][0] == Game.States[:Human] and board[2][2] == Game.States[:Open]
+        board[2][2] = Game.States[:Opponent]
+      elsif board[0][2] == Game.States[:Human] and board[2][0] == Game.States[:Open]
+        board[2][0] = Game.States[:Opponent]
+      elsif board[2][0] == Game.States[:Human] and board[0][2] == Game.States[:Open]
+        board[0][2] = Game.States[:Opponent]
+      elsif board[2][2] == Game.States[:Human] and board[0][0] == Game.States[:Open]
+        board[0][0] = Game.States[:Opponent]
       else
         return false
       end
@@ -288,15 +288,15 @@ module AI
       return true
     end
 
-    def self.any_corner state
-      if state[2][2] == Game.States[:Open]
-        state[2][2] = Game.States[:Opponent]
-      elsif state[2][0] == Game.States[:Open]
-        state[2][0] = Game.States[:Opponent]
-      elsif state[0][2] == Game.States[:Open]
-        state[0][2] = Game.States[:Opponent]
-      elsif state[0][0] == Game.States[:Open]
-        state[0][0] = Game.States[:Opponent]
+    def self.any_corner board
+      if board[2][2] == Game.States[:Open]
+        board[2][2] = Game.States[:Opponent]
+      elsif board[2][0] == Game.States[:Open]
+        board[2][0] = Game.States[:Opponent]
+      elsif board[0][2] == Game.States[:Open]
+        board[0][2] = Game.States[:Opponent]
+      elsif board[0][0] == Game.States[:Open]
+        board[0][0] = Game.States[:Opponent]
       else 
         return false
       end
@@ -304,31 +304,31 @@ module AI
       return true
     end
 
-    def self.first_available state
-      AI._take_first_available state
+    def self.first_available board
+      AI._take_first_available board
       return true
     end
 
-    def self._eval_state state, report_state
-      if self._eval_rows state, report_state
+    def self._eval_state board, report_state
+      if self._eval_rows board, report_state
         return true
-      elsif self._eval_cols state, report_state
+      elsif self._eval_cols board, report_state
         return true
-      elsif self._eval_ulbr state, report_state
+      elsif self._eval_ulbr board, report_state
         return true
       else
-        return self._eval_blur state, report_state
+        return self._eval_blur board, report_state
       end
     end
 
-    def self._eval_rows state, report_state
-      0.upto(state.count - 1) do |row|
+    def self._eval_rows board, report_state
+      0.upto(board.count - 1) do |row|
         linestate = LineState.new(
-          lambda {|idx, who| state[row][idx] = who }
+          lambda {|idx, who| board[row][idx] = who }
         )
 
-        0.upto(state[row].count - 1) do |col|
-          linestate.update state[row][col], col
+        0.upto(board[row].count - 1) do |col|
+          linestate.update board[row][col], col
         end
 
         if report_state.call(linestate)
@@ -339,14 +339,14 @@ module AI
       return false
     end
     
-    def self._eval_cols state, report_state
-      0.upto(state.count - 1) do |col|
+    def self._eval_cols board, report_state
+      0.upto(board.count - 1) do |col|
         linestate = LineState.new(
-          lambda {|idx, who| state[idx][col] = who}
+          lambda {|idx, who| board[idx][col] = who}
         )
 
-        0.upto(state[col].count - 1) do |row|
-          linestate.update state[row][col], row
+        0.upto(board[col].count - 1) do |row|
+          linestate.update board[row][col], row
         end
 
         if report_state.call(linestate)
@@ -357,25 +357,25 @@ module AI
       return false
     end
   
-    def self._eval_ulbr state, report_state
+    def self._eval_ulbr board, report_state
       linestate = LineState.new(
-        lambda {|idx, who| state[idx][idx] = who}
+        lambda {|idx, who| board[idx][idx] = who}
       )
 
       0.upto(2) do |rowcol|
-        linestate.update state[rowcol][rowcol], rowcol
+        linestate.update board[rowcol][rowcol], rowcol
       end
 
       return report_state.call(linestate)
     end
 
-    def self._eval_blur state, report_state
+    def self._eval_blur board, report_state
       linestate = LineState.new(
-        lambda {|idx, who| state[2 - idx][idx] = who}
+        lambda {|idx, who| board[2 - idx][idx] = who}
       )
 
       0.upto(2) do |rowcol|
-        linestate.update state[2 - rowcol][rowcol], rowcol
+        linestate.update board[2 - rowcol][rowcol], rowcol
       end
 
       return report_state.call(linestate)
@@ -383,28 +383,28 @@ module AI
   end
 
   class Sloppy
-    def self.move state
+    def self.move board
       if 0 == rand(10)
-        return JSON.dump(self.random_move(JSON.parse(state)))
+        return JSON.dump(self.random_move(JSON.parse(board)))
       end
-      return Minimax.move state
+      return Minimax.move board
     end
 
-    def self.random_move state
+    def self.random_move board
       moves = []
 
       for row in 0..2
         for col in 0..2
-          if state[row][col] == Game.States[:Open]
+          if board[row][col] == Game.States[:Open]
             moves.append([row, col])
           end
         end
       end
 
       move = moves[rand(moves.count)]
-      state[move[0]][move[1]] = Game.States[:Opponent]
+      board[move[0]][move[1]] = Game.States[:Opponent]
 
-      return state
+      return board
     end
   end
 end

@@ -3,7 +3,7 @@
 <table>
   <tr>
     <th>Status</th>
-    <th>State</th>
+    <th>Board</th>
     <th>Moves</th>
     <th></th>
     <th></th>
@@ -13,7 +13,7 @@
 <% @games.each do |game| %>
   <tr>
     <td><%= game.status %></td>
-    <td><%= game.state %></td>
+    <td><%= game.board %></td>
     <td><%= game.moves %></td>
     <td><%= link_to 'Show', game %></td>
     <td><%= link_to 'Edit', edit_game_path(game) %></td>

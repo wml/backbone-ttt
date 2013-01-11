@@ -3,6 +3,8 @@
     <% mini_cell_size = 50 %>
     <% mini_grid_size = 3 * mini_cell_size %>
 
+    <!-- TODO: don't shade board on GO in history pane -->
+
     <script type="text/javascript">      
       var Graphics = {
         mainCellSize: <%= cell_size %>,
@@ -203,7 +205,7 @@
           $('#movetime').text("");
 
           Graphics.clearHistory();
-          Graphics.draw(UI.game.getState(), null);
+          Graphics.draw(UI.game.getBoard(), null);
 
           UI.getBoard().click(UI.move);
         },
@@ -239,7 +241,7 @@
           var game = UI.game;
           var ai = $('input[name=ai]:checked').val();
 
-          Graphics.draw(game.getState(), winner);
+          Graphics.draw(game.getBoard(), winner);
 
           if (null == winner) {
             var start = (new Date()).getTime();
@@ -253,7 +255,7 @@
         aiMoveSaved: function(winner, start) {
           var responseTime = (new Date()).getTime() - start;
 
-          Graphics.draw(UI.game.getState(), winner);
+          Graphics.draw(UI.game.getBoard(), winner);
           $('#movetime').text("response time: " + responseTime + "ms");
 
           if (null == winner) {

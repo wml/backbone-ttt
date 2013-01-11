@@ -1,6 +1,118 @@
+require 'json'
+
 class Game < ActiveRecord::Base
-  attr_accessible :moves, :state, :status
+  class BoardSerializer
+    def self.load(from_db)
+      result = []
+      from_db = from_db.to_i
+
+      for r in 0..2
+        row = []
+        for c in 0..2
+          row.unshift (from_db & 0x3)
+          from_db >>= 2
+        end
+        result.unshift row
+      end
+
+      return JSON.dump(result)
+    end
+
+    def self.dump(to_db)
+      result = 0
+      to_db = JSON.parse(to_db)
+
+      for r in 0..2
+        for c in 0..2
+          result <<= 2
+          result |= to_db[r][c]
+        end
+      end
+
+      result &= 0x3FFFF
+      return result
+    end
+  end
+
+  class MovesSerializer
+    def self.load(from_db)
+      result = []
+      from_db = from_db.to_i
+      from_db = 0xFFFFFFFF unless from_db != 0
+      board = [[0,0,0],[0,0,0],[0,0,0]]
+      player = 0
+
+      for i in 1..9
+        move = from_db & 0x7
+        from_db >>= 3
+
+        if move == 7
+          next_bit = from_db & 0x1
+          from_db >>= 1
+          if next_bit == 1
+            next_bit = from_db & 0x1
+            from_db >>= 1
+            if next_bit == 1
+              break
+            end
+            move = 8
+          end
+        end
+
+        row = move % 3
+        col = move / 3
+          
+        board[row][col] = 1 + player
+        player = (player + 1) % 2
+
+        result.push([board[0].clone, board[1].clone, board[2].clone])
+      end
+      
+      return JSON.dump(result)
+    end
+
+    def self.dump(to_db)
+      board = [[0,0,0],[0,0,0],[0,0,0]]
+      to_db = JSON.parse(to_db) if ''.class == to_db.class
+      result = 0xFFFFFFFF
+
+      moves = []
+      for state in to_db
+        moves.push self.diff(board, state)
+        board = state
+      end
+
+      for move in moves.reverse
+        packed = move[0] + move[1] * 3
+        if packed == 7
+          result <<= 4
+        elsif packed == 8
+          result <<= 5
+          packed |= 0x7
+        else
+          result <<= 3
+        end
+        result |= packed
+      end
+
+      return result & 0xFFFFFFFF
+    end
+
+    def self.diff board, state
+      for row in 0..2
+        for col in 0..2
+          if board[row][col] != state[row][col]
+            return [row, col]
+          end
+        end
+      end
+    end
+  end
+
+  attr_accessible :moves, :board, :status
   after_initialize
+  serialize :board, BoardSerializer
+  serialize :moves, MovesSerializer
 
   @@States = {
     :Open => 0,
@@ -15,9 +127,9 @@ class Game < ActiveRecord::Base
 
   def initialize *params
     super *params
-    self.status = 0 unless self.status
-    self.state = '[[0,0,0],[0,0,0],[0,0,0]]' unless self.state
-    self.moves = '[]' unless self.moves
+    self.status = @@States[:Open] unless self.status
+    self.board = 0 unless self.board
+    self.moves = 0xFFFFFFFF unless self.moves
   end
 
   def self.winner board
