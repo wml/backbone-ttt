@@ -2,7 +2,7 @@ require 'test_helper'
 
 class GamesControllerTest < ActionController::TestCase
   setup do
-    @game = games(:one)
+    @game = games(:one_move)
   end
 
   test "should get index" do
@@ -35,7 +35,7 @@ class GamesControllerTest < ActionController::TestCase
   end
 
   test "should update game" do
-    put :update, :id => @game, :game => { :moves => @game.moves, :board => @game.board, :status => @game.status }
+    put :update, :id => @game, :game => { :moves => @game.moves, :board => '[[1,2,0],[0,0,0],[0,0,0]]', :status => @game.status }
     assert_redirected_to game_path(assigns(:game))
   end
 

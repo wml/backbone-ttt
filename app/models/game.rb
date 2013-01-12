@@ -109,10 +109,61 @@ class Game < ActiveRecord::Base
     end
   end
 
+  class GameValidator < ActiveModel::Validator
+    def validate(record)
+      GameValidator.validate_status(record)
+      GameValidator.validate_board(record)
+      GameValidator.validate_moves(record)
+    end
+
+    def self.validate_board(record)
+      board_changes = record.changes[:board]
+      current = record.board
+      last = (nil != board_changes ? board_changes[0] : Game.EmptyBoard)
+      moves = 0
+      slots = { 
+        Game.States[:Human].to_s => 0, 
+        Game.States[:Opponent].to_s => 0 
+      }
+
+      for i in 0.upto(current.length - 1)
+        if current[i] != last[i]
+          moves += 1
+          if last[i] != Game.States[:Open].to_s
+            record.errors[:board] << "non-empty slots may not be changed (#{last[i]} -> #{current[i]})"
+          elsif not slots.include? current[i]
+            record.errors[:board] << "illegal move [#{current[i]}]"
+          end
+        end
+        if slots.include? current[i]
+          slots[current[i]] += 1
+        end
+      end
+
+      if 1 != moves
+        record.errors[:board] << 'one move must be made per save'
+      end
+
+      if not (0..1).member?(
+        slots[Game.States[:Human].to_s] -
+        slots[Game.States[:Opponent].to_s]
+      )
+        record.errors[:board] << 'turns must alternate between the human and computer opponent, with the human moving first'
+      end
+    end
+    
+    def self.validate_status(record)
+    end
+
+    def self.validate_moves(record)
+    end
+  end
+
   attr_accessible :moves, :board, :status
-  after_initialize
   serialize :board, BoardSerializer
   serialize :moves, MovesSerializer
+  include ActiveModel::Validations
+  validates_with GameValidator
 
   @@States = {
     :Open => 0,
@@ -120,9 +171,14 @@ class Game < ActiveRecord::Base
     :Opponent => 2,
     :Tie => 3,
   }
+  @@EmptyBoard = "[[0,0,0],[0,0,0],[0,0,0]]"
 
   def self.States
     return @@States
+  end
+
+  def self.EmptyBoard
+    return @@EmptyBoard
   end
 
   def initialize *params

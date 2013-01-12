@@ -1,11 +1,4 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
-
-one:
-  board: 0
-  status: 1
-  moves: 0
-
-two:
-  board: 0
-  status: 1
-  moves: 0
+one_move:
+  board: 65536
+  status: 0
+  moves: 4294967288
