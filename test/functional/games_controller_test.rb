@@ -31,7 +31,7 @@ class GamesControllerTest < ActionController::TestCase
   end
 
   test "create game fails if moves list sent" do
-    post :create, { :format => :json, :game => { :moves => '[]', :board => @game.board } }
+    post :create, { :format => :json, :game => { :moves => [], :board => @game.board } }
 
     assert_response :unprocessable_entity
   end
@@ -53,7 +53,7 @@ class GamesControllerTest < ActionController::TestCase
   end
 
   test "should update game" do
-    put :update, {:format => :json, :id => @game, :game => { :board => '[[1,2,0],[0,0,0],[0,0,0]]' }}
+    put :update, {:format => :json, :id => @game, :game => { :board => [[1,2,0],[0,0,0],[0,0,0]] }}
     assert_response :success
   end
 

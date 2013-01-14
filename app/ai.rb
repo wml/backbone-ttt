@@ -1,4 +1,3 @@
-require 'json'
 require 'game'
 
 module AI
@@ -16,14 +15,13 @@ module AI
 
   class FirstAvailable 
     def self.move board
-      return JSON.dump(AI._take_first_available(JSON.parse(board)))
+      return AI._take_first_available(board)
     end
   end
 
   class Minimax
     def self.move board
-      board = JSON.parse(board)
-      return JSON.dump(self.algo(true, board, true, { }, 1, -100, 100))
+      return self.algo(true, board, true, { }, 1, -100, 100)
     end
 
     def self.algo myturn, board, root, solutions, depth, alpha, beta
@@ -155,11 +153,9 @@ module AI
         :first_available
       ]
       
-      board = JSON.parse(board)
-
       rules.each do |rule|
         if Heuristic.send rule, board
-          return JSON.dump(board)
+          return board
         end
       end
     end
@@ -386,7 +382,7 @@ module AI
   class Sloppy
     def self.move board
       if 0 == rand(10)
-        return JSON.dump(self.random_move(JSON.parse(board)))
+        return self.random_move(board)
       end
       return Minimax.move board
     end

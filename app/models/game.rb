@@ -1,5 +1,3 @@
-require 'json'
-
 class Game < ActiveRecord::Base
   class BoardSerializer
     def self.load(from_db)
@@ -15,12 +13,11 @@ class Game < ActiveRecord::Base
         result.unshift row
       end
 
-      return JSON.dump(result)
+      return result
     end
 
     def self.dump(to_db)
       result = 0
-      to_db = JSON.parse(to_db)
 
       for r in 0..2
         for c in 0..2
@@ -68,12 +65,11 @@ class Game < ActiveRecord::Base
         result.push([board[0].clone, board[1].clone, board[2].clone])
       end
       
-      return JSON.dump(result)
+      return result
     end
 
     def self.dump(to_db)
       board = [[0,0,0],[0,0,0],[0,0,0]]
-      to_db = JSON.parse(to_db) if ''.class == to_db.class
       result = 0xFFFFFFFF
 
       moves = []
@@ -128,33 +124,36 @@ class Game < ActiveRecord::Base
       last = (nil != board_changes ? board_changes[0] : Game.EmptyBoard)
       moves = 0
       slots = { 
-        Game.States[:Human].to_s => 0, 
-        Game.States[:Opponent].to_s => 0 
+        Game.States[:Open] => 0, 
+        Game.States[:Human] => 0, 
+        Game.States[:Opponent] => 0,
       }
 
-      for i in 0.upto(current.length - 1)
-        if current[i] != last[i]
-          moves += 1
-          if last[i] != Game.States[:Open].to_s
-            record.errors[:board] << "non-empty slots may not be changed (#{last[i]} -> #{current[i]})"
-          elsif not slots.include? current[i]
-            record.errors[:board] << "illegal move [#{current[i]}]"
+      for row in 0.upto(current.length - 1)
+        for col in 0.upto(current[row].length - 1)
+          if current[row][col] != last[row][col]
+            moves += 1
+            if last[row][col] != Game.States[:Open]
+              record.errors[:board] << "non-empty slots may not be changed (#{last[row][col]} -> #{current[row][col]})"
+            end
           end
-        end
-        if slots.include? current[i]
-          slots[current[i]] += 1
+          if slots.include? current[row][col]
+            slots[current[row][col]] += 1
+          else
+            record.errors[:board] << "illegal move [#{current[row][col]}]"
+          end
         end
       end
 
       if 1 != moves
-        record.errors[:board] << 'one move must be made per save'
+        record.errors[:board] << "one move must be made per save"
       end
 
       if not (0..1).member?(
-        slots[Game.States[:Human].to_s] -
-        slots[Game.States[:Opponent].to_s]
+        slots[Game.States[:Human]] -
+        slots[Game.States[:Opponent]]
       )
-        record.errors[:board] << 'turns must alternate between the human and computer opponent, with the human moving first'
+        record.errors[:board] << "turns must alternate between the human and computer opponent, with the human moving first"
       end
     end
   end
@@ -171,7 +170,7 @@ class Game < ActiveRecord::Base
     :Opponent => 2,
     :Tie => 3,
   }
-  @@EmptyBoard = "[[0,0,0],[0,0,0],[0,0,0]]"
+  @@EmptyBoard = [[0,0,0],[0,0,0],[0,0,0]]
 
   def self.States
     return @@States
@@ -185,15 +184,13 @@ class Game < ActiveRecord::Base
     super *params
     self.status = @@States[:Open] unless self.status
     self.board = Game.EmptyBoard unless self.board
-    self.moves = "[]" unless self.moves
+    self.moves = [] unless self.moves
   end
 
   def move board
     self.board = board
-    moves = JSON.parse(self.moves)
-    moves.push(JSON.parse(board))
-    self.moves = JSON.dump(moves)
-    self.status = Game.winner(JSON.parse(self.board))
+    self.moves.push(board)
+    self.status = Game.winner(board)
   end
 
   def self.winner board

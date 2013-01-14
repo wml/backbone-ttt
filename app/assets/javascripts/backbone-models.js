@@ -1,10 +1,12 @@
 Game = Backbone.Model.extend({
     urlRoot: '/games',
 
-    defaults: {
-        "board": "[[0,0,0],[0,0,0],[0,0,0]]",
-        "status": 0,
-        "moves": "[]",
+    defaults: function() {
+        return {
+            "board": [[0,0,0],[0,0,0],[0,0,0]],
+            "status": 0,
+            "moves": []
+        };
     },
 
     toJSON: function() {
@@ -12,7 +14,7 @@ Game = Backbone.Model.extend({
     },
 
     getBoard: function() {
-        return JSON.parse(this.get("board"));
+        return this.get("board");
     },
 
     move: function(row, col, callback, errorCallback) {
@@ -30,8 +32,8 @@ Game = Backbone.Model.extend({
 
     getAIMove: function(ai, callback, errorCallback) {
         var that = this;
-        $.ajax('/ai/' + ai + '/move', {
-            data: { "board": that.get("board") },
+        $.ajax("/ai/" + ai + "/move", {
+            data: { "board": JSON.stringify(that.getBoard()) },
             error: function(jqXHR, textStatus, errorThrown) { 
                     errorCallback(errorThrown.message);
             },
@@ -43,13 +45,13 @@ Game = Backbone.Model.extend({
     },
 
     moveComplete: function(board, callback, errorCallback) {
-        var moves = JSON.parse(this.get("moves"));
+        var moves = this.get("moves");
         var winner = this.winner(board);
 
         moves.push(board);
 
-        this.set("board", JSON.stringify(board));
-        this.set("moves", JSON.stringify(moves));
+        this.set("board", board);
+        this.set("moves", moves);
 
         if (undefined != winner && null != winner) {
             this.set("status", winner.who);

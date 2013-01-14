@@ -1,3 +1,5 @@
+# TODO: rip out unnecessary scaffolding and update games list view
+
 class GamesController < ApplicationController
   # GET /games
   # GET /games.json
