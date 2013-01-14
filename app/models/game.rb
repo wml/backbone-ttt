@@ -111,12 +111,18 @@ class Game < ActiveRecord::Base
 
   class GameValidator < ActiveModel::Validator
     def validate(record)
-      GameValidator.validate_status(record)
-      GameValidator.validate_board(record)
-      GameValidator.validate_moves(record)
+      status_changes = record.changes[:status]
+      last_status = (nil != status_changes) ? status_changes[0] : record.status
+      last_status = Game.States[:Open] if last_status == nil
+
+      if last_status != Game.States[:Open]
+        record.errors[:board] << "illegal move: game already ended with outcome [#{last_status}]"
+      else
+        validate_board(record)
+      end
     end
 
-    def self.validate_board(record)
+    def validate_board(record)
       board_changes = record.changes[:board]
       current = record.board
       last = (nil != board_changes ? board_changes[0] : Game.EmptyBoard)
@@ -151,12 +157,6 @@ class Game < ActiveRecord::Base
         record.errors[:board] << 'turns must alternate between the human and computer opponent, with the human moving first'
       end
     end
-    
-    def self.validate_status(record)
-    end
-
-    def self.validate_moves(record)
-    end
   end
 
   attr_accessible :moves, :board, :status
@@ -184,8 +184,16 @@ class Game < ActiveRecord::Base
   def initialize *params
     super *params
     self.status = @@States[:Open] unless self.status
-    self.board = 0 unless self.board
-    self.moves = 0xFFFFFFFF unless self.moves
+    self.board = Game.EmptyBoard unless self.board
+    self.moves = "[]" unless self.moves
+  end
+
+  def move board
+    self.board = board
+    moves = JSON.parse(self.moves)
+    moves.push(JSON.parse(board))
+    self.moves = JSON.dump(moves)
+    self.status = Game.winner(JSON.parse(self.board))
   end
 
   def self.winner board
@@ -213,6 +221,6 @@ class Game < ActiveRecord::Base
       return board[2][0]
     end
         
-    return @@States[:Open]
+    return board.flatten.member?(@@States[:Open]) ? @@States[:Open] : @@States[:Tie]
   end
 end

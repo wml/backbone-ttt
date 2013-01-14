@@ -18,10 +18,28 @@ class GamesControllerTest < ActionController::TestCase
 
   test "should create game" do
     assert_difference('Game.count') do
-      post :create, :game => { :moves => @game.moves, :board => @game.board, :status => @game.status }
+      post :create, { :format => :json, :game => { :board => @game.board } }
     end
 
-    assert_redirected_to game_path(assigns(:game))
+    assert_response :success
+  end
+
+  test "create game fails if status sent" do
+    post :create, { :format => :json, :game => { :status => 0, :board => @game.board } }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "create game fails if moves list sent" do
+    post :create, { :format => :json, :game => { :moves => '[]', :board => @game.board } }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "create game fails if bogus parameter sent" do
+    post :create, { :format => :json, :game => { :foo => 'bar', :board => @game.board } }
+
+    assert_response :unprocessable_entity
   end
 
   test "should show game" do
@@ -35,8 +53,8 @@ class GamesControllerTest < ActionController::TestCase
   end
 
   test "should update game" do
-    put :update, :id => @game, :game => { :moves => @game.moves, :board => '[[1,2,0],[0,0,0],[0,0,0]]', :status => @game.status }
-    assert_redirected_to game_path(assigns(:game))
+    put :update, {:format => :json, :id => @game, :game => { :board => '[[1,2,0],[0,0,0],[0,0,0]]' }}
+    assert_response :success
   end
 
   test "should destroy game" do

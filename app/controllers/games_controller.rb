@@ -23,7 +23,7 @@ class GamesController < ApplicationController
 
   # GET /games/new
   # GET /games/new.json
-  def new
+  def new # TODO: kill
     @game = Game.new
 
     respond_to do |format|
@@ -37,33 +37,40 @@ class GamesController < ApplicationController
     @game = Game.find(params[:id])
   end
 
-  # POST /games
   # POST /games.json
   def create
-    @game = Game.new(params[:game])
+    game_params = params[:game]
+    if not validate_params(game_params)
+      return
+    end
+
+    @game = Game.new
+    @game.move game_params[:board]
 
     respond_to do |format|
       if @game.save
-        format.html { redirect_to @game, :notice => 'Game was successfully created.' }
         format.json { render :json => @game, :status => :created, :location => @game }
       else
-        format.html { render :action => "new" }
         format.json { render :json => @game.errors, :status => :unprocessable_entity }
       end
     end
   end
 
-  # PUT /games/1
   # PUT /games/1.json
   def update
+    game_params = params[:game]
+    if not validate_params(game_params)
+      return
+    end
+
     @game = Game.find(params[:id])
+    @game.move game_params[:board]
+
 
     respond_to do |format|
-      if @game.update_attributes(params[:game])
-        format.html { redirect_to @game, :notice => 'Game was successfully updated.' }
+      if @game.save
         format.json { head :no_content }
       else
-        format.html { render :action => "edit" }
         format.json { render :json => @game.errors, :status => :unprocessable_entity }
       end
     end
@@ -79,5 +86,15 @@ class GamesController < ApplicationController
       format.html { redirect_to games_url }
       format.json { head :no_content }
     end
+  end
+
+  def validate_params game_params
+    if game_params.count != 1 or not game_params.member?(:board)
+      respond_to do |format|
+        format.json { render :json => {:board => ["exactly one parameter is expected to this API: `board'"]}, :status => :unprocessable_entity }
+      end
+      return false
+    end
+    return true
   end
 end

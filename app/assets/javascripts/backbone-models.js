@@ -7,6 +7,10 @@ Game = Backbone.Model.extend({
         "moves": "[]",
     },
 
+    toJSON: function() {
+        return { board: this.get("board") };
+    },
+
     getBoard: function() {
         return JSON.parse(this.get("board"));
     },

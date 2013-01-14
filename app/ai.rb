@@ -106,6 +106,7 @@ module AI
         Game.States[:Opponent] => 1,
         Game.States[:Human] => -1,
         Game.States[:Open] => 0,
+        Game.States[:Tie] => 0,
       }
 
       return scores[Game.winner(board)]
