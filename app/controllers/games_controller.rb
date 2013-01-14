@@ -1,14 +1,10 @@
-# TODO: view last 10 games view
-
 class GamesController < ApplicationController
   # GET /games
   # GET /games.json
   def index
-    @games = Game.all
-
     respond_to do |format|
-      format.html # index.html.erb
-      format.json { render :json => @games }
+      format.html { @games = Game.last(10).reverse } # index.html.erb
+      format.json { render :json => Game.all }
     end
   end
 

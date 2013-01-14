@@ -4,7 +4,8 @@
     <% mini_grid_size = 3 * mini_cell_size %>
 
     <script type="text/javascript">      
-      var Graphics = {
+      var Graphics = Graphics || { };
+      Graphics.Main = {
         mainCellSize: <%= cell_size %>,
         miniCellSize: <%= mini_cell_size %>,
         lastMoveDrawn: -1,
@@ -15,37 +16,40 @@
         },
 
         getHistoryContext: function() {
-          return Graphics.getHistory()[0].getContext("2d");
+          return this.getHistory()[0].getContext("2d");
         },
 
         getHistory: function() {
           return $("#history_canvas");
         },
 
-        eachRow: function(callback) {
-          for (var row = 0; row < 3; ++row) {
-            for (var col = 0; col < 3; ++col) {
-              callback(row, col);			    
-            }
-          }
-        },
-
         clearHistory: function() {
-          Graphics.lastMoveDrawn = -1;
-          Graphics.getHistory()[0].height = 0;
+          this.lastMoveDrawn = -1;
+          this.getHistory()[0].height = 0;
         },
 
         draw: function(state, winner) {
-          this.drawState(
-            this.getMainContext(), 0, Graphics.mainCellSize, state, winner, null
+          var ximg = $('#x-img')[0];
+          var oimg = $('#o-img')[0];
+
+          Graphics.Core.drawState(
+            this.getMainContext(),
+            0,
+            0,
+            ximg,
+            oimg,
+            this.mainCellSize, 
+            state,
+            winner,
+            null
           );
 
-          var last = Graphics.lastMoveDrawn;
+          var last = this.lastMoveDrawn;
           if (-1 != last) {
             var historyContext = this.getHistoryContext();
             var heightWithPad = <%=mini_grid_size%> + 30;
 
-            Graphics.sizeHistory(
+            this.sizeHistory(
               historyContext, 
               (1 + last) * heightWithPad, 
               heightWithPad
@@ -53,22 +57,31 @@
 
             $("#history").scrollTop(0);
 
-            this.drawState(
+            Graphics.Core.drawState(
               historyContext,
+              0,
               15,
-              Graphics.miniCellSize, 
+              ximg,
+              oimg,
+              this.miniCellSize, 
               state, 
               winner,
-              Graphics.lastBoardState
+              this.lastBoardState
             );
           }
 
-          ++Graphics.lastMoveDrawn;
-          Graphics.lastBoardState = state;
+          ++this.lastMoveDrawn;
+          if (state != null) {
+            this.lastBoardState = [
+              state[0].slice(0),
+              state[1].slice(0),
+              state[2].slice(0),
+            ];
+          }
         },
 
         sizeHistory: function(context, height, top) {
-            var history = Graphics.getHistory()[0];
+            var history = this.getHistory()[0];
 
             if (0 == history.height) {
               history.height = height;
@@ -86,85 +99,11 @@
             }
         },
 
-        drawState: function(ctx, y, cellsize, state, winner, lastState) {
-          var s = cellsize;
-          var x = 0;
-          var ximg = $('#x-img')[0];
-          var oimg = $('#o-img')[0];
-          ctx.globalAlpha = 1;
-
-          Graphics.eachRow(function(row, col) {
-            var left = x + s * col;
-            var top = y + s * row;
-
-            ctx.beginPath();
-            ctx.rect(left, top, s, s);
-            ctx.fillStyle = 
-              (null != lastState && lastState[row][col] != state[row][col]) 
-                ? "#bbbbff"
-                : "#e8e8e8";
-            ctx.fill();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = "#666666";
-            ctx.stroke();
-
-            if (Game.States.Human == state[row][col]) {
-              ctx.drawImage(ximg, left, top, cellsize, cellsize);
-            }
-            else if (Game.States.Opponent == state[row][col]) {
-              ctx.drawImage(oimg, left, top, cellsize, cellsize);
-            }
-          });
-
-          if (null != winner) {
-            if (Game.States.Tie != winner.who) {
-              Graphics.drawWinner(ctx, winner, y, cellsize);
-            }
-
-            if (null == lastState) {
-              ctx.beginPath();
-              ctx.globalAlpha = 0.5;
-              ctx.rect(0, y, 3 * cellsize, 3 * cellsize);
-              ctx.fillStyle = "#fff";
-              ctx.fill();
-            }
-          }
-        },
-
-        drawWinner: function(ctx, winner, y, cellsize) {
-          var s = cellsize;
-          var color = (Game.States.Human == winner.who ? '#0F0' : '#F00');
-
-          ctx.beginPath();
-          ctx.lineWidth = cellsize / 12;
-          ctx.lineCap = 'round';
-          ctx.strokeStyle = color;
-
-          if ('row' == winner.how) {
-            ctx.moveTo(s/4, y + s/2 + s * winner.where);
-            ctx.lineTo(s * 3 - s / 4, y + s/2 + s * winner.where);
-          }
-          else if ('col' == winner.how) {
-            ctx.moveTo(s/2 + s * winner.where, y + s/4);
-            ctx.lineTo(s/2 + s * winner.where, y + s * 3 - s / 4);
-          }
-          else if ('ulbr' == winner.how) {
-            ctx.moveTo(s/4, y + s/4);
-            ctx.lineTo(s * 3 - s / 4, y + s * 3 - s / 4);
-          }
-          else {
-            ctx.moveTo(s/4, y + s * 3 - s / 4);
-            ctx.lineTo(s * 3 - s / 4, y + s/4);
-          }
-
-          ctx.stroke();
-        },
-
         hitTest: function(e) { 
           coords = this.relativeCoords(e);
           return {
-            row: Math.floor(coords.y / Graphics.mainCellSize),
-            col: Math.floor(coords.x / Graphics.mainCellSize),
+            row: Math.floor(coords.y / this.mainCellSize),
+            col: Math.floor(coords.x / this.mainCellSize),
           };
         },
 
@@ -204,8 +143,8 @@
           $("#instructions").css("display", "block");
           $('#movetime').text("");
 
-          Graphics.clearHistory();
-          Graphics.draw(UI.game.getBoard(), null);
+          Graphics.Main.clearHistory();
+          Graphics.Main.draw(UI.game.getBoard(), null);
 
           UI.getBoard().click(UI.move);
         },
@@ -219,7 +158,7 @@
           UI.lock(canvas, "wait");
 
           $("#instructions").css("display", "none");          
-          var rowcol = Graphics.hitTest(e);
+          var rowcol = Graphics.Main.hitTest(e);
 
           if (!UI.game.move(rowcol.row, rowcol.col, UI.userMoveSaved, UI.moveError)) {
             alert("Bogus move, broski");
@@ -241,7 +180,7 @@
           var game = UI.game;
           var ai = $('input[name=ai]:checked').val();
 
-          Graphics.draw(game.getBoard(), winner);
+          Graphics.Main.draw(game.getBoard(), winner);
 
           if (null == winner) {
             var start = (new Date()).getTime();
@@ -255,7 +194,7 @@
         aiMoveSaved: function(winner, start) {
           var responseTime = (new Date()).getTime() - start;
 
-          Graphics.draw(UI.game.getBoard(), winner);
+          Graphics.Main.draw(UI.game.getBoard(), winner);
           $('#movetime').text("response time: " + responseTime + "ms");
 
           if (null == winner) {
@@ -417,6 +356,19 @@
         float: right;
         font-size: 10px;
         font-weight: normal;
+        margin-top: 2px;
+      }
+
+      #last10 {
+        float: right;
+        font-size: 10px;
+        font-weight: normal;
+        margin-top: 3px;
+      }
+
+      #last10:hover { 
+        background-color: white; 
+        color: #666;
       }
 
       #blocker {
@@ -495,7 +447,7 @@
         <input type="radio" value="Sloppy" name="ai" />
         <label for="Sloppy">Sloppy Minimax <a class="tooltip">[?]<span>The computer has a 90% chance of applying the Minimax algorithm and a 10% chance of moving randomly</span></a></label><br/>
 
-        <h3>History</h3>
+        <h3>History <a id="last10" href="/games" target="_new">View Last 10 Games</a></h3>
         <div id="history"><canvas id="history_canvas" width="<%= mini_grid_size %>"></canvas></div>
       </div>
 
