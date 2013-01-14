@@ -1,4 +1,4 @@
-# TODO: rip out unnecessary scaffolding and update games list view
+# TODO: view last 10 games view
 
 class GamesController < ApplicationController
   # GET /games
@@ -21,22 +21,6 @@ class GamesController < ApplicationController
       format.html # show.html.erb
       format.json { render :json => @game }
     end
-  end
-
-  # GET /games/new
-  # GET /games/new.json
-  def new # TODO: kill
-    @game = Game.new
-
-    respond_to do |format|
-      format.html # new.html.erb
-      format.json { render :json => @game }
-    end
-  end
-
-  # GET /games/1/edit
-  def edit
-    @game = Game.find(params[:id])
   end
 
   # POST /games.json
@@ -75,18 +59,6 @@ class GamesController < ApplicationController
       else
         format.json { render :json => @game.errors, :status => :unprocessable_entity }
       end
-    end
-  end
-
-  # DELETE /games/1
-  # DELETE /games/1.json
-  def destroy
-    @game = Game.find(params[:id])
-    @game.destroy
-
-    respond_to do |format|
-      format.html { redirect_to games_url }
-      format.json { head :no_content }
     end
   end
 

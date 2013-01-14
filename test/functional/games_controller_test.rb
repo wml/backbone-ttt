@@ -11,11 +11,6 @@ class GamesControllerTest < ActionController::TestCase
     assert_not_nil assigns(:games)
   end
 
-  test "should get new" do
-    get :new
-    assert_response :success
-  end
-
   test "should create game" do
     assert_difference('Game.count') do
       post :create, { :format => :json, :game => { :board => @game.board } }
@@ -47,21 +42,8 @@ class GamesControllerTest < ActionController::TestCase
     assert_response :success
   end
 
-  test "should get edit" do
-    get :edit, :id => @game
-    assert_response :success
-  end
-
   test "should update game" do
     put :update, {:format => :json, :id => @game, :game => { :board => [[1,2,0],[0,0,0],[0,0,0]] }}
     assert_response :success
-  end
-
-  test "should destroy game" do
-    assert_difference('Game.count', -1) do
-      delete :destroy, :id => @game
-    end
-
-    assert_redirected_to games_path
   end
 end
